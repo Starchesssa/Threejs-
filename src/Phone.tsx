@@ -1,5 +1,5 @@
 
-import { useThree, useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   interpolate,
@@ -8,7 +8,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import { Video } from "@remotion/media";
-import { CanvasTexture, Texture, Vector3, Spherical } from "three";
+import { CanvasTexture, Texture, Spherical, Vector3 } from "three";
 import {
   CAMERA_DISTANCE,
   PHONE_CURVE_SEGMENTS,
@@ -29,31 +29,28 @@ export const Phone: React.FC<{
   const { fps, durationInFrames } = useVideoConfig();
 
   const camera = useThree((s) => s.camera);
-  const { invalidate } = useThree();
 
   /**
-   * Lock phone position in world space
-   */
-  const target = useMemo(() => new Vector3(0, 0, 0), []);
-
-  /**
-   * Camera setup (run once)
+   * Camera setup (once)
    */
   useEffect(() => {
     camera.near = 0.2;
     camera.far = 5000;
     camera.position.set(0, 0, CAMERA_DISTANCE + 6);
-    camera.lookAt(target);
-  }, [camera, target]);
+    camera.lookAt(0, 0, 0);
+  }, [camera]);
 
   /**
-   * TRUE camera animation (spherical orbit)
+   * TRUE camera animation (ONLY camera moves)
    */
-  useEffect(() => {
+  useFrame(() => {
     const entrance = spring({
       frame,
       fps,
-      config: { damping: 160, mass: 2.5 },
+      config: {
+        damping: 200,
+        mass: 3,
+      },
     });
 
     // Horizontal orbit
@@ -63,11 +60,11 @@ export const Phone: React.FC<{
       [Math.PI * 0.25, Math.PI * 6.25]
     );
 
-    // Vertical camera tilt (subtle)
+    // Subtle vertical tilt
     const phi = interpolate(
       entrance,
       [0, 1],
-      [Math.PI / 2.3, Math.PI / 2.05]
+      [Math.PI / 2.2, Math.PI / 2.05]
     );
 
     // Dolly in
@@ -79,10 +76,8 @@ export const Phone: React.FC<{
 
     const spherical = new Spherical(radius, phi, theta);
     camera.position.setFromSpherical(spherical);
-    camera.lookAt(target);
-
-    invalidate();
-  }, [camera, frame, fps, durationInFrames, target, invalidate]);
+    camera.lookAt(0, 0, 0);
+  });
 
   /**
    * Screen geometry
@@ -125,6 +120,8 @@ export const Phone: React.FC<{
     return tex;
   });
 
+  const { invalidate } = useThree();
+
   const onVideoFrame = useCallback(
     (frame: CanvasImageSource) => {
       context.drawImage(frame, 0, 0);
@@ -135,7 +132,7 @@ export const Phone: React.FC<{
   );
 
   /**
-   * Render (PHONE IS STATIC)
+   * RENDER (PHONE IS STATIC)
    */
   return (
     <>
@@ -158,9 +155,9 @@ export const Phone: React.FC<{
       <mesh position={phoneLayout.screen.position}>
         <shapeGeometry args={[screenGeometry]} />
         <meshBasicMaterial
-          map={texture}
-          toneMapped={false}
           color={0xffffff}
+          toneMapped={false}
+          map={texture}
         />
       </mesh>
     </>
