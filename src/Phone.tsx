@@ -1,5 +1,6 @@
+
 import { useThree } from "@react-three/fiber";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   interpolate,
   spring,
@@ -9,6 +10,7 @@ import {
 import { Video } from "@remotion/media";
 import { CanvasTexture, Texture } from "three";
 import {
+  CAMERA_DISTANCE,
   PHONE_CURVE_SEGMENTS,
   PHONE_SHININESS,
   PhoneLayout,
@@ -22,87 +24,88 @@ export const Phone: React.FC<{
   readonly phoneLayout: PhoneLayout;
   readonly mediaMetadata: MediabunnyMetadata;
   readonly videoSrc: string;
-  readonly zOffset?: number;
-}> = ({
-  phoneColor,
-  phoneLayout,
-  mediaMetadata,
-  videoSrc,
-  zOffset = 0,
-}) => {
+}> = ({ phoneColor, phoneLayout, mediaMetadata, videoSrc }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, durationInFrames } = useVideoConfig();
+
+  const camera = useThree((state) => state.camera);
   const { invalidate } = useThree();
 
-  /* -------------------------------------------------- */
-  /* ENTRANCE (AE Easy Ease / Spring)                    */
-  /* -------------------------------------------------- */
+  /**
+   * Initial camera setup
+   */
+  useEffect(() => {
+    camera.near = 0.2;
+    camera.far = Math.max(5000, CAMERA_DISTANCE * 2);
+    camera.position.set(0, 0, CAMERA_DISTANCE + 4);
+    camera.lookAt(0, 0, 0);
+  }, [camera]);
 
-  const entrance = spring({
-    frame,
-    fps,
-    config: {
-      damping: 160,
-      mass: 2.5,
-    },
-  });
+  /**
+   * Camera animation (instead of object animation)
+   */
+  useEffect(() => {
+    // Constant orbit rotation
+    const constantRotation = interpolate(
+      frame,
+      [0, durationInFrames],
+      [0, Math.PI * 6]
+    );
 
-  /* -------------------------------------------------- */
-  /* POSITION (Subtle, cinematic)                        */
-  /* -------------------------------------------------- */
+    // Entrance spring
+    const entrance = spring({
+      frame,
+      fps,
+      config: {
+        damping: 200,
+        mass: 3,
+      },
+    });
 
-  const translateY = interpolate(entrance, [0, 1], [-1.2, 0]);
+    const entranceRotation = interpolate(
+      entrance,
+      [0, 1],
+      [-Math.PI, Math.PI]
+    );
 
-  const translateZ = interpolate(
-    entrance,
-    [0, 1],
-    [2 + zOffset, zOffset]
-  );
+    const rotateY = entranceRotation + constantRotation;
 
-  /* -------------------------------------------------- */
-  /* ROTATION (Very subtle – AE realism)                 */
-  /* -------------------------------------------------- */
+    // Zoom animation
+    const distance = interpolate(
+      entrance,
+      [0, 1],
+      [CAMERA_DISTANCE + 4, CAMERA_DISTANCE]
+    );
 
-  const rotateY = interpolate(
-    frame,
-    [0, 200],
-    [-0.12, 0.12],
-    {
-      extrapolateRight: "clamp",
-    }
-  );
+    camera.position.x = Math.sin(rotateY) * distance;
+    camera.position.z = Math.cos(rotateY) * distance;
 
-  const rotateX = interpolate(
-    frame,
-    [0, 200],
-    [0.05, 0],
-    {
-      extrapolateRight: "clamp",
-    }
-  );
+    // Vertical entrance movement
+    camera.position.y = interpolate(entrance, [0, 1], [-4, 0]);
 
-  /* -------------------------------------------------- */
-  /* SCREEN GEOMETRY                                    */
-  /* -------------------------------------------------- */
+    camera.lookAt(0, 0, 0);
 
-  const screenGeometry = useMemo(
-    () =>
-      roundedRect({
-        width: phoneLayout.screen.width,
-        height: phoneLayout.screen.height,
-        radius: phoneLayout.screen.radius,
-      }),
-    [
-      phoneLayout.screen.width,
-      phoneLayout.screen.height,
-      phoneLayout.screen.radius,
-    ]
-  );
+    invalidate();
+  }, [camera, frame, fps, durationInFrames, invalidate]);
 
-  /* -------------------------------------------------- */
-  /* VIDEO TEXTURE (AE Video Layer Equivalent)           */
-  /* -------------------------------------------------- */
+  /**
+   * Screen geometry
+   */
+  const screenGeometry = useMemo(() => {
+    return roundedRect({
+      width: phoneLayout.screen.width,
+      height: phoneLayout.screen.height,
+      radius: phoneLayout.screen.radius,
+    });
+  }, [
+    phoneLayout.screen.width,
+    phoneLayout.screen.height,
+    phoneLayout.screen.radius,
+  ]);
 
+  /**
+   * Canvas video texture
+   */
   const [canvas] = useState(
     () =>
       new OffscreenCanvas(
@@ -111,42 +114,38 @@ export const Phone: React.FC<{
       )
   );
 
-  const [ctx] = useState(() => {
-    const context = canvas.getContext("2d");
-    if (!context) throw new Error("Canvas context not available");
-    return context;
+  const [context] = useState(() => {
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      throw new Error("Failed to get canvas context");
+    }
+    return ctx;
   });
 
-  const [texture] = useState<Texture>(() => new CanvasTexture(canvas));
+  const [texture] = useState<Texture>(() => {
+    const tex = new CanvasTexture(canvas);
+    tex.repeat.x = 1 / phoneLayout.screen.width;
+    tex.repeat.y = 1 / phoneLayout.screen.height;
+    return tex;
+  });
 
   const onVideoFrame = useCallback(
     (frame: CanvasImageSource) => {
-      ctx.drawImage(frame, 0, 0);
+      context.drawImage(frame, 0, 0);
       texture.needsUpdate = true;
       invalidate();
     },
-    [ctx, texture, invalidate]
+    [context, texture, invalidate]
   );
 
-  /* -------------------------------------------------- */
-  /* RENDER                                             */
-  /* -------------------------------------------------- */
-
+  /**
+   * Render
+   */
   return (
-    <group
-      scale={entrance}
-      position={[0, translateY, translateZ]}
-      rotation={[rotateX, rotateY, 0]}
-    >
-      {/* Video layer (offscreen → texture) */}
-      <Video
-        src={videoSrc}
-        onVideoFrame={onVideoFrame}
-        headless
-        muted
-      />
+    <>
+      <Video src={videoSrc} onVideoFrame={onVideoFrame} headless muted />
 
-      {/* Phone body */}
+      {/* Phone Body */}
       <RoundedBox
         radius={phoneLayout.phone.radius}
         depth={phoneLayout.phone.thickness}
@@ -167,8 +166,9 @@ export const Phone: React.FC<{
         <meshBasicMaterial
           map={texture}
           toneMapped={false}
+          color={0xffffff}
         />
       </mesh>
-    </group>
+    </>
   );
 };
