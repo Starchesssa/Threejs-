@@ -1,5 +1,5 @@
 
-import { useThree } from "@react-three/fiber";
+import { useThree, useFrame } from "@react-three/fiber";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   interpolate,
@@ -8,7 +8,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import { Video } from "@remotion/media";
-import { CanvasTexture, Texture } from "three";
+import { CanvasTexture, Texture, Vector3, Spherical } from "three";
 import {
   CAMERA_DISTANCE,
   PHONE_CURVE_SEGMENTS,
@@ -20,73 +20,69 @@ import { RoundedBox } from "./RoundedBox";
 import { MediabunnyMetadata } from "./helpers/get-media-metadata";
 
 export const Phone: React.FC<{
-  readonly phoneColor: string;
-  readonly phoneLayout: PhoneLayout;
-  readonly mediaMetadata: MediabunnyMetadata;
-  readonly videoSrc: string;
+  phoneColor: string;
+  phoneLayout: PhoneLayout;
+  mediaMetadata: MediabunnyMetadata;
+  videoSrc: string;
 }> = ({ phoneColor, phoneLayout, mediaMetadata, videoSrc }) => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
 
-  const camera = useThree((state) => state.camera);
+  const camera = useThree((s) => s.camera);
   const { invalidate } = useThree();
 
   /**
-   * Initial camera setup
+   * Lock phone position in world space
+   */
+  const target = useMemo(() => new Vector3(0, 0, 0), []);
+
+  /**
+   * Camera setup (run once)
    */
   useEffect(() => {
     camera.near = 0.2;
-    camera.far = Math.max(5000, CAMERA_DISTANCE * 2);
-    camera.position.set(0, 0, CAMERA_DISTANCE + 4);
-    camera.lookAt(0, 0, 0);
-  }, [camera]);
+    camera.far = 5000;
+    camera.position.set(0, 0, CAMERA_DISTANCE + 6);
+    camera.lookAt(target);
+  }, [camera, target]);
 
   /**
-   * Camera animation (instead of object animation)
+   * TRUE camera animation (spherical orbit)
    */
   useEffect(() => {
-    // Constant orbit rotation
-    const constantRotation = interpolate(
-      frame,
-      [0, durationInFrames],
-      [0, Math.PI * 6]
-    );
-
-    // Entrance spring
     const entrance = spring({
       frame,
       fps,
-      config: {
-        damping: 200,
-        mass: 3,
-      },
+      config: { damping: 160, mass: 2.5 },
     });
 
-    const entranceRotation = interpolate(
-      entrance,
-      [0, 1],
-      [-Math.PI, Math.PI]
+    // Horizontal orbit
+    const theta = interpolate(
+      frame,
+      [0, durationInFrames],
+      [Math.PI * 0.25, Math.PI * 6.25]
     );
 
-    const rotateY = entranceRotation + constantRotation;
-
-    // Zoom animation
-    const distance = interpolate(
+    // Vertical camera tilt (subtle)
+    const phi = interpolate(
       entrance,
       [0, 1],
-      [CAMERA_DISTANCE + 4, CAMERA_DISTANCE]
+      [Math.PI / 2.3, Math.PI / 2.05]
     );
 
-    camera.position.x = Math.sin(rotateY) * distance;
-    camera.position.z = Math.cos(rotateY) * distance;
+    // Dolly in
+    const radius = interpolate(
+      entrance,
+      [0, 1],
+      [CAMERA_DISTANCE + 6, CAMERA_DISTANCE]
+    );
 
-    // Vertical entrance movement
-    camera.position.y = interpolate(entrance, [0, 1], [-4, 0]);
-
-    camera.lookAt(0, 0, 0);
+    const spherical = new Spherical(radius, phi, theta);
+    camera.position.setFromSpherical(spherical);
+    camera.lookAt(target);
 
     invalidate();
-  }, [camera, frame, fps, durationInFrames, invalidate]);
+  }, [camera, frame, fps, durationInFrames, target, invalidate]);
 
   /**
    * Screen geometry
@@ -104,7 +100,7 @@ export const Phone: React.FC<{
   ]);
 
   /**
-   * Canvas video texture
+   * Video texture
    */
   const [canvas] = useState(
     () =>
@@ -116,16 +112,16 @@ export const Phone: React.FC<{
 
   const [context] = useState(() => {
     const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      throw new Error("Failed to get canvas context");
-    }
+    if (!ctx) throw new Error("No 2D context");
     return ctx;
   });
 
   const [texture] = useState<Texture>(() => {
     const tex = new CanvasTexture(canvas);
-    tex.repeat.x = 1 / phoneLayout.screen.width;
-    tex.repeat.y = 1 / phoneLayout.screen.height;
+    tex.repeat.set(
+      1 / phoneLayout.screen.width,
+      1 / phoneLayout.screen.height
+    );
     return tex;
   });
 
@@ -139,13 +135,12 @@ export const Phone: React.FC<{
   );
 
   /**
-   * Render
+   * Render (PHONE IS STATIC)
    */
   return (
     <>
       <Video src={videoSrc} onVideoFrame={onVideoFrame} headless muted />
 
-      {/* Phone Body */}
       <RoundedBox
         radius={phoneLayout.phone.radius}
         depth={phoneLayout.phone.thickness}
@@ -160,7 +155,6 @@ export const Phone: React.FC<{
         />
       </RoundedBox>
 
-      {/* Screen */}
       <mesh position={phoneLayout.screen.position}>
         <shapeGeometry args={[screenGeometry]} />
         <meshBasicMaterial
