@@ -1,4 +1,3 @@
-
 import { useFrame, useThree } from "@react-three/fiber";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -8,7 +7,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import { Video } from "@remotion/media";
-import { CanvasTexture, Texture, Spherical, Vector3 } from "three";
+import { CanvasTexture, Spherical } from "three";
 import {
   CAMERA_DISTANCE,
   PHONE_CURVE_SEGMENTS,
@@ -27,47 +26,40 @@ export const Phone: React.FC<{
 }> = ({ phoneColor, phoneLayout, mediaMetadata, videoSrc }) => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
-
   const camera = useThree((s) => s.camera);
 
   /**
-   * Camera setup (once)
+   * Camera initial setup (once)
    */
   useEffect(() => {
-    camera.near = 0.2;
+    camera.near = 0.1;
     camera.far = 5000;
     camera.position.set(0, 0, CAMERA_DISTANCE + 6);
     camera.lookAt(0, 0, 0);
   }, [camera]);
 
   /**
-   * TRUE camera animation (ONLY camera moves)
+   * CAMERA ANIMATION (THIS IS THE KEY)
    */
   useFrame(() => {
     const entrance = spring({
       frame,
       fps,
-      config: {
-        damping: 200,
-        mass: 3,
-      },
+      config: { damping: 180, mass: 3 },
     });
 
-    // Horizontal orbit
     const theta = interpolate(
       frame,
       [0, durationInFrames],
-      [Math.PI * 0.25, Math.PI * 6.25]
+      [0, Math.PI * 2]
     );
 
-    // Subtle vertical tilt
     const phi = interpolate(
       entrance,
       [0, 1],
       [Math.PI / 2.2, Math.PI / 2.05]
     );
 
-    // Dolly in
     const radius = interpolate(
       entrance,
       [0, 1],
@@ -82,17 +74,15 @@ export const Phone: React.FC<{
   /**
    * Screen geometry
    */
-  const screenGeometry = useMemo(() => {
-    return roundedRect({
-      width: phoneLayout.screen.width,
-      height: phoneLayout.screen.height,
-      radius: phoneLayout.screen.radius,
-    });
-  }, [
-    phoneLayout.screen.width,
-    phoneLayout.screen.height,
-    phoneLayout.screen.radius,
-  ]);
+  const screenGeometry = useMemo(
+    () =>
+      roundedRect({
+        width: phoneLayout.screen.width,
+        height: phoneLayout.screen.height,
+        radius: phoneLayout.screen.radius,
+      }),
+    [phoneLayout]
+  );
 
   /**
    * Video texture
@@ -105,38 +95,23 @@ export const Phone: React.FC<{
       )
   );
 
-  const [context] = useState(() => {
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("No 2D context");
-    return ctx;
-  });
-
-  const [texture] = useState<Texture>(() => {
-    const tex = new CanvasTexture(canvas);
-    tex.repeat.set(
-      1 / phoneLayout.screen.width,
-      1 / phoneLayout.screen.height
-    );
-    return tex;
-  });
-
-  const { invalidate } = useThree();
+  const ctx = canvas.getContext("2d")!;
+  const [texture] = useState(() => new CanvasTexture(canvas));
 
   const onVideoFrame = useCallback(
     (frame: CanvasImageSource) => {
-      context.drawImage(frame, 0, 0);
+      ctx.drawImage(frame, 0, 0);
       texture.needsUpdate = true;
-      invalidate();
     },
-    [context, texture, invalidate]
+    [ctx, texture]
   );
 
   /**
-   * RENDER (PHONE IS STATIC)
+   * PHONE — NO TRANSFORMS
    */
   return (
     <>
-      <Video src={videoSrc} onVideoFrame={onVideoFrame} headless muted />
+      <Video src={videoSrc} onVideoFrame={onVideoFrame} muted />
 
       <RoundedBox
         radius={phoneLayout.phone.radius}
@@ -154,12 +129,9 @@ export const Phone: React.FC<{
 
       <mesh position={phoneLayout.screen.position}>
         <shapeGeometry args={[screenGeometry]} />
-        <meshBasicMaterial
-          color={0xffffff}
-          toneMapped={false}
-          map={texture}
-        />
+        <meshBasicMaterial map={texture} toneMapped={false} />
       </mesh>
     </>
   );
 };
+
