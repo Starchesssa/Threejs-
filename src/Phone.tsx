@@ -1,3 +1,4 @@
+
 import { useFrame, useThree } from "@react-three/fiber";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -6,7 +7,6 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { Video } from "@remotion/media";
 import { CanvasTexture, Spherical } from "three";
 import {
   CAMERA_DISTANCE,
@@ -23,24 +23,12 @@ export const Phone: React.FC<{
   phoneLayout: PhoneLayout;
   mediaMetadata: MediabunnyMetadata;
   videoSrc: string;
-}> = ({ phoneColor, phoneLayout, mediaMetadata, videoSrc }) => {
+}> = ({ phoneColor, phoneLayout, mediaMetadata }) => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
   const camera = useThree((s) => s.camera);
 
-  /**
-   * Camera initial setup (once)
-   */
-  useEffect(() => {
-    camera.near = 0.1;
-    camera.far = 5000;
-    camera.position.set(0, 0, CAMERA_DISTANCE + 6);
-    camera.lookAt(0, 0, 0);
-  }, [camera]);
-
-  /**
-   * CAMERA ANIMATION (THIS IS THE KEY)
-   */
+  /* CAMERA ANIMATION */
   useFrame(() => {
     const entrance = spring({
       frame,
@@ -54,26 +42,23 @@ export const Phone: React.FC<{
       [0, Math.PI * 2]
     );
 
-    const phi = interpolate(
-      entrance,
-      [0, 1],
-      [Math.PI / 2.2, Math.PI / 2.05]
-    );
-
     const radius = interpolate(
       entrance,
       [0, 1],
       [CAMERA_DISTANCE + 6, CAMERA_DISTANCE]
     );
 
-    const spherical = new Spherical(radius, phi, theta);
+    const spherical = new Spherical(
+      radius,
+      Math.PI / 2.1,
+      theta
+    );
+
     camera.position.setFromSpherical(spherical);
     camera.lookAt(0, 0, 0);
   });
 
-  /**
-   * Screen geometry
-   */
+  /* SCREEN GEOMETRY */
   const screenGeometry = useMemo(
     () =>
       roundedRect({
@@ -84,9 +69,7 @@ export const Phone: React.FC<{
     [phoneLayout]
   );
 
-  /**
-   * Video texture
-   */
+  /* VIDEO TEXTURE */
   const [canvas] = useState(
     () =>
       new OffscreenCanvas(
@@ -98,21 +81,13 @@ export const Phone: React.FC<{
   const ctx = canvas.getContext("2d")!;
   const [texture] = useState(() => new CanvasTexture(canvas));
 
-  const onVideoFrame = useCallback(
-    (frame: CanvasImageSource) => {
-      ctx.drawImage(frame, 0, 0);
-      texture.needsUpdate = true;
-    },
-    [ctx, texture]
-  );
+  /* NOTE:
+     The video frame drawing must be wired from Scene.tsx
+     or via a shared hook – DOM → THREE boundary
+  */
 
-  /**
-   * PHONE — NO TRANSFORMS
-   */
   return (
     <>
-      <Video src={videoSrc} onVideoFrame={onVideoFrame} muted />
-
       <RoundedBox
         radius={phoneLayout.phone.radius}
         depth={phoneLayout.phone.thickness}
@@ -134,4 +109,3 @@ export const Phone: React.FC<{
     </>
   );
 };
-
