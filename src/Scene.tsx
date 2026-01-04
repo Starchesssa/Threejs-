@@ -15,21 +15,12 @@ export const Scene: React.FC = () => {
         frameloop="always"
         linear
       >
-        <ambientLight intensity={0.15} />
+        {/* CINEMATIC LIGHTING */}
+        <ambientLight intensity={0.2} />
+        <directionalLight position={[5, 10, 5]} intensity={1.5} />
+        <pointLight position={[-5, 2, 5]} intensity={0.5} color="#4f8cff" />
 
-        <directionalLight
-          position={[5, 8, 5]}
-          intensity={1.2}
-          castShadow
-        />
-
-        <pointLight position={[-4, 2, 6]} intensity={0.8} />
-        <pointLight
-          position={[3, -2, 4]}
-          intensity={0.4}
-          color="#4f8cff"
-        />
-
+        {/* IMAGE + VIDEO CONTENT */}
         <Phone />
       </ThreeCanvas>
     </AbsoluteFill>
