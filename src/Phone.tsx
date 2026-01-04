@@ -1,98 +1,91 @@
-
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import React, { useEffect, useMemo, useRef } from "react";
-import { useCurrentFrame } from "remotion";
-import { TextureLoader, VideoTexture, LinearFilter, Spherical, Vector3 } from "three";
+import { useCurrentFrame, spring } from "remotion";
+import { TextureLoader, VideoTexture, LinearFilter, Vector3 } from "three";
 import { IMAGES, VIDEOS } from "./media";
 
 export const Phone: React.FC = () => {
   const camera = useThree((s) => s.camera);
   const frame = useCurrentFrame();
 
-  /* =========================
-     CINEMATIC ORBIT CAMERA
-  ========================== */
-  useFrame(() => {
-    const radius = 10 + Math.sin(frame * 0.01) * 1.5;
-    const theta = frame * 0.008;
+  const videoRef = useRef<HTMLVideoElement>(document.createElement("video"));
 
-    const spherical = new Spherical(radius, Math.PI / 2.5, theta);
-    camera.position.setFromSpherical(spherical);
-    camera.lookAt(new Vector3(0, 0, 0));
+  // Determine which media is active
+  const imageDuration = 180; // 3–7 sec: 180 frames ~ 6 sec at 30fps
+  const videoDuration = 300; // 10 sec per video
+
+  const totalImageFrames = IMAGES.length * imageDuration;
+  const totalVideoFrames = VIDEOS.length * videoDuration;
+
+  const cycleFrames = totalImageFrames + totalVideoFrames;
+  const currentFrameInCycle = frame % cycleFrames;
+
+  let currentMedia: { type: "image" | "video"; src: string; index: number };
+  if (currentFrameInCycle < totalImageFrames) {
+    const idx = Math.floor(currentFrameInCycle / imageDuration);
+    currentMedia = { type: "image", src: IMAGES[idx], index: idx };
+  } else {
+    const idx = Math.floor((currentFrameInCycle - totalImageFrames) / videoDuration);
+    currentMedia = { type: "video", src: VIDEOS[idx], index: idx };
+  }
+
+  // Load textures
+  const imageTexture = useLoader(TextureLoader, currentMedia.type === "image" ? [currentMedia.src] : []);
+  
+  const videoTexture = useMemo(() => {
+    if (currentMedia.type === "video") {
+      videoRef.current.src = currentMedia.src;
+      videoRef.current.crossOrigin = "anonymous";
+      videoRef.current.loop = false;
+      videoRef.current.muted = true;
+      videoRef.current.play();
+      const tex = new VideoTexture(videoRef.current);
+      tex.minFilter = LinearFilter;
+      tex.magFilter = LinearFilter;
+      return tex;
+    }
+    return null;
+  }, [currentMedia]);
+
+  // Camera zoom effect
+  useFrame(() => {
+    const t = (currentMedia.type === "image"
+      ? (currentFrameInCycle % imageDuration) / imageDuration
+      : (currentFrameInCycle - totalImageFrames) % videoDuration / videoDuration
+    );
+
+    const zoom = 6 - 2 * t; // zoom in from 6 to 4
+    camera.position.lerp(new Vector3(0, 0, zoom), 0.1);
+    camera.lookAt(0, 0, 0);
   });
 
-  /* =========================
-     IMAGE SEQUENCE
-  ========================== */
-  const imageIndex = Math.floor(frame / 120) % IMAGES.length;
-  const imageTexture = useLoader(TextureLoader, IMAGES[imageIndex]);
-
-  /* =========================
-     VIDEO SEQUENCE
-  ========================== */
-  const videoIndex = Math.floor(frame / 300) % VIDEOS.length;
-  const video = useRef<HTMLVideoElement>(document.createElement("video"));
-
-  useEffect(() => {
-    video.current.src = VIDEOS[videoIndex];
-    video.current.crossOrigin = "anonymous";
-    video.current.loop = true;
-    video.current.muted = true;
-    video.current.play();
-  }, [videoIndex]);
-
-  const videoTexture = useMemo(() => {
-    const tex = new VideoTexture(video.current);
-    tex.minFilter = LinearFilter;
-    tex.magFilter = LinearFilter;
-    return tex;
-  }, []);
-
-  /* =========================
-     IMAGE + VIDEO OPACITY & POSITION
-  ========================== */
-  const imageOpacity = Math.min(1, Math.sin((frame % 120) * 0.05) + 0.5);
-  const videoOpacity = Math.min(1, Math.sin((frame % 300) * 0.03) + 0.5);
-
-  const imageZ = -2 + Math.sin(frame * 0.02) * 0.5;
-  const videoZ = -4 + Math.cos(frame * 0.015) * 0.5;
-
-  const imageX = -1 + Math.sin(frame * 0.01);
-  const videoX = 1 + Math.cos(frame * 0.012);
-
-  const imageY = 0.5 * Math.sin(frame * 0.008);
-  const videoY = 0.5 * Math.cos(frame * 0.01);
-
-  /* =========================
-     RENDER
-  ========================== */
   return (
     <>
-      {/* IMAGE PLANE */}
-      <mesh position={[imageX, imageY, imageZ]}>
-        <planeGeometry
-          args={[3, 3 * (imageTexture.image.height / imageTexture.image.width)]}
-        />
-        <meshStandardMaterial
-          map={imageTexture}
-          transparent
-          opacity={imageOpacity}
-          roughness={0.3}
-          metalness={0.1}
-        />
-      </mesh>
+      {currentMedia.type === "image" && (
+        <mesh>
+          <planeGeometry args={[3, 3 * (imageTexture[0].image.height / imageTexture[0].image.width)]} />
+          <meshStandardMaterial
+            map={imageTexture[0]}
+            transparent
+            opacity={1}
+            roughness={0.3}
+            metalness={0.1}
+          />
+        </mesh>
+      )}
 
-      {/* VIDEO PLANE */}
-      <mesh position={[videoX, videoY, videoZ]}>
-        <planeGeometry args={[4, 4 * 0.5625]} />
-        <meshStandardMaterial
-          map={videoTexture}
-          transparent
-          opacity={videoOpacity}
-          roughness={0.2}
-          metalness={0}
-        />
-      </mesh>
+      {currentMedia.type === "video" && videoTexture && (
+        <mesh>
+          <planeGeometry args={[4, 4 * 0.5625]} />
+          <meshStandardMaterial
+            map={videoTexture}
+            transparent
+            opacity={1}
+            roughness={0.2}
+            metalness={0}
+          />
+        </mesh>
+      )}
     </>
   );
 };
