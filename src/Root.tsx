@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Composition, staticFile } from "remotion";
+import { Composition } from "remotion";
 import { Scene } from "./Scene";
 import { MEDIA_SEQUENCE } from "./media-sequence";
 import { getMediaMetadata } from "./helpers/get-media-metadata";
@@ -22,7 +22,8 @@ export const RemotionRoot: React.FC = () => {
           if (item.type === "image") {
             totalFrames += IMAGE_SECONDS * FPS;
           } else {
-            const meta = await getMediaMetadata(staticFile(item.src));
+            // ✅ PASS URL DIRECTLY (NO staticFile)
+            const meta = await getMediaMetadata(item.src);
             const frames = Math.floor(meta.durationInSeconds * FPS);
             videoFrameMap[item.src] = frames;
             totalFrames += frames;
