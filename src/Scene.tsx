@@ -16,7 +16,7 @@ export const Scene: React.FC<{
         width={width}     // ✅ FIX
         height={height}   // ✅ FIX
         linear
-        camera={{ fov: 40, position: [0, 0, 6] }}
+        camera={{ fov: 38, position: [0, 0, 6] }}
       >
         {/* LIGHTING */}
         <ambientLight intensity={0.9} />
