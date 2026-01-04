@@ -1,3 +1,4 @@
+
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import React, { useEffect, useMemo, useRef } from "react";
 import { useCurrentFrame, interpolate } from "remotion";
@@ -7,6 +8,8 @@ import {
   LinearFilter,
   Spherical,
 } from "three";
+
+import { IMAGES, VIDEOS } from "../media";
 
 export const Phone: React.FC = () => {
   const camera = useThree((s) => s.camera);
@@ -25,34 +28,37 @@ export const Phone: React.FC = () => {
   });
 
   /* =========================
-     IMAGE (PNG WITH ALPHA)
+     IMAGE SEQUENCE
   ========================== */
+  const imageIndex = Math.floor(frame / 90) % IMAGES.length;
+
   const imageTexture = useLoader(
     TextureLoader,
-    require("../Assets/Img/image.png")
+    IMAGES[imageIndex]
   );
 
-  const imageOpacity = interpolate(frame, [10, 30], [0, 1], {
+  const imageOpacity = interpolate(frame % 90, [10, 30], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  const imageZ = interpolate(frame, [0, 40], [-6, -2], {
+  const imageZ = interpolate(frame % 90, [0, 40], [-6, -2], {
     extrapolateRight: "clamp",
   });
 
   /* =========================
-     VIDEO (MP4)
+     VIDEO SEQUENCE
   ========================== */
   const video = useRef<HTMLVideoElement>(document.createElement("video"));
+  const videoIndex = Math.floor(frame / 240) % VIDEOS.length;
 
   useEffect(() => {
-    video.current.src = require("../Assets/Vid/video.mp4");
+    video.current.src = VIDEOS[videoIndex];
     video.current.crossOrigin = "anonymous";
     video.current.loop = true;
     video.current.muted = true;
     video.current.play();
-  }, []);
+  }, [videoIndex]);
 
   const videoTexture = useMemo(() => {
     const tex = new VideoTexture(video.current);
@@ -61,7 +67,7 @@ export const Phone: React.FC = () => {
     return tex;
   }, []);
 
-  const videoOpacity = interpolate(frame, [40, 60], [0, 1], {
+  const videoOpacity = interpolate(frame % 240, [40, 60], [0, 1], {
     extrapolateLeft: "clamp",
   });
 
@@ -101,7 +107,7 @@ export const Phone: React.FC = () => {
         />
       </mesh>
 
-      {/* DEPTH BLOCKS (MAGNET MEDIA STYLE) */}
+      {/* DEPTH BLOCKS */}
       {[0, 1, 2].map((i) => (
         <mesh
           key={i}
@@ -122,4 +128,3 @@ export const Phone: React.FC = () => {
     </>
   );
 };
-
