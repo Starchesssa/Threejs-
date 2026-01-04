@@ -1,29 +1,36 @@
+
 import { useFrame, useThree } from "@react-three/fiber";
-import { useThree } from "@react-three/fiber";
-import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useCurrentFrame, useVideoConfig, Video } from "remotion";
 import { CanvasTexture, Texture, Vector3 } from "three";
 import { interpolate, spring } from "remotion";
 import { RoundedBox } from "./RoundedBox";
 import { roundedRect } from "./helpers/rounded-rectangle";
-import { PHONE_CURVE_SEGMENTS, PHONE_SHININESS, CAMERA_DISTANCE, PhoneLayout } from "./helpers/layout";
+import {
+  CAMERA_DISTANCE,
+  PHONE_CURVE_SEGMENTS,
+  PHONE_SHININESS,
+  PhoneLayout,
+} from "./helpers/layout";
 
-// Media type
 export type MediaItem = { type: "image" | "video"; src: string };
 
-// Props
 interface PhoneProps {
   phoneColor: string;
   phoneLayout: PhoneLayout;
   mediaSequence: MediaItem[];
 }
 
-export const Phone: React.FC<PhoneProps> = ({ phoneColor, phoneLayout, mediaSequence }) => {
+export const Phone: React.FC<PhoneProps> = ({
+  phoneColor,
+  phoneLayout,
+  mediaSequence,
+}) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const camera = useThree((s) => s.camera);
 
-  // Set camera properties
+  // Camera setup
   useEffect(() => {
     camera.position.set(0, 0, CAMERA_DISTANCE);
     camera.fov = 38; // cinematic 35mm lens
@@ -37,73 +44,71 @@ export const Phone: React.FC<PhoneProps> = ({ phoneColor, phoneLayout, mediaSequ
 
   // --- Media playback state ---
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [imageFrameStart, setImageFrameStart] = useState(0);
-  const videoRef = useRef<HTMLVideoElement>(document.createElement("video"));
+  const [frameStart, setFrameStart] = useState(frame);
 
   const currentMedia = mediaSequence[currentIndex];
 
-  // --- CanvasTexture for images ---
-  const [canvasTexture, setCanvasTexture] = useState<CanvasTexture | null>(null);
-  const [context, setContext] = useState<CanvasRenderingContext2D | null>(null);
+  // Canvas for image or video texture
+  const canvasRef = useRef<HTMLCanvasElement>(document.createElement("canvas"));
+  const [texture, setTexture] = useState<Texture | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(document.createElement("video"));
 
   useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
     if (currentMedia.type === "image") {
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      if (!ctx) throw new Error("Cannot get canvas context");
       const img = new Image();
       img.src = currentMedia.src;
+      img.crossOrigin = "anonymous";
       img.onload = () => {
         canvas.width = img.width;
         canvas.height = img.height;
         ctx.drawImage(img, 0, 0, img.width, img.height);
         const tex = new CanvasTexture(canvas);
-        setCanvasTexture(tex);
-        setContext(ctx);
+        setTexture(tex);
       };
-    }
-  }, [currentMedia]);
-
-  // --- Media switching logic ---
-  useEffect(() => {
-    if (currentMedia.type === "video") {
+    } else if (currentMedia.type === "video") {
       videoRef.current.src = currentMedia.src;
       videoRef.current.crossOrigin = "anonymous";
       videoRef.current.loop = false;
       videoRef.current.muted = true;
       videoRef.current.play().catch(() => {});
+
+      const tex = new CanvasTexture(canvas);
+      setTexture(tex);
+
+      const tick = () => {
+        if (videoRef.current.readyState >= 2) {
+          canvas.width = videoRef.current.videoWidth;
+          canvas.height = videoRef.current.videoHeight;
+          ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+          tex.needsUpdate = true;
+        }
+        requestAnimationFrame(tick);
+      };
+      tick();
     }
   }, [currentMedia]);
 
+  // --- Media switching ---
   useEffect(() => {
-    // Image duration: 5 seconds
-    const imageDuration = fps * 5;
+    const duration = currentMedia.type === "image" ? fps * 5 : videoRef.current.duration * fps || fps * 5;
 
-    let raf: number;
-
-    const tick = () => {
-      if (currentMedia.type === "image") {
-        const nextFrame = frame - imageFrameStart;
-        if (nextFrame >= imageDuration) {
-          setCurrentIndex((i) => (i + 1) % mediaSequence.length);
-          setImageFrameStart(frame);
-        }
-      } else if (currentMedia.type === "video") {
-        if (videoRef.current.ended) {
-          setCurrentIndex((i) => (i + 1) % mediaSequence.length);
-          setImageFrameStart(frame);
-        }
+    const id = setInterval(() => {
+      if (frame - frameStart >= duration) {
+        setCurrentIndex((i) => (i + 1) % mediaSequence.length);
+        setFrameStart(frame);
       }
-      raf = requestAnimationFrame(tick);
-    };
+    }, 1000 / fps);
 
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [frame, currentMedia, mediaSequence, fps, imageFrameStart]);
+    return () => clearInterval(id);
+  }, [frame, frameStart, currentMedia, mediaSequence, fps]);
 
   // --- Smooth camera motion ---
   useFrame(() => {
-    const t = frame / 120; // slow interpolation factor
+    const t = (frame - frameStart) / fps / 2; // slower motion
     const targetZ = currentMedia.type === "image" ? 5 : 6;
     camera.position.lerp(new Vector3(0, 0, targetZ), 0.05);
     camera.lookAt(0, 0, 0);
@@ -116,15 +121,10 @@ export const Phone: React.FC<PhoneProps> = ({ phoneColor, phoneLayout, mediaSequ
       height: phoneLayout.screen.height,
       radius: phoneLayout.screen.radius,
     });
-  }, [phoneLayout.screen.height, phoneLayout.screen.radius, phoneLayout.screen.width]);
+  }, [phoneLayout.screen.width, phoneLayout.screen.height, phoneLayout.screen.radius]);
 
   return (
     <group scale={[1, 1, 1]}>
-      {/* Video */}
-      {currentMedia.type === "video" && (
-        <Video src={currentMedia.src} onVideoFrame={() => {}} headless muted />
-      )}
-
       {/* Phone body */}
       <RoundedBox
         radius={phoneLayout.phone.radius}
@@ -138,10 +138,10 @@ export const Phone: React.FC<PhoneProps> = ({ phoneColor, phoneLayout, mediaSequ
       </RoundedBox>
 
       {/* Phone screen */}
-      {currentMedia.type === "image" && canvasTexture && (
+      {texture && (
         <mesh position={phoneLayout.screen.position}>
           <shapeGeometry args={[screenGeometry]} />
-          <meshBasicMaterial map={canvasTexture} toneMapped={false} />
+          <meshBasicMaterial map={texture} toneMapped={false} />
         </mesh>
       )}
     </group>
