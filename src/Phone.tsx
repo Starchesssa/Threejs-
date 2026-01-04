@@ -1,4 +1,3 @@
-
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import React, { useEffect, useMemo, useRef } from "react";
 import { useCurrentFrame, interpolate } from "remotion";
@@ -9,7 +8,8 @@ import {
   Spherical,
 } from "three";
 
-import { IMAGES, VIDEOS } from "../media";
+// ✅ Corrected import path
+import { IMAGES, VIDEOS } from "./media";
 
 export const Phone: React.FC = () => {
   const camera = useThree((s) => s.camera);
@@ -32,10 +32,7 @@ export const Phone: React.FC = () => {
   ========================== */
   const imageIndex = Math.floor(frame / 90) % IMAGES.length;
 
-  const imageTexture = useLoader(
-    TextureLoader,
-    IMAGES[imageIndex]
-  );
+  const imageTexture = useLoader(TextureLoader, IMAGES[imageIndex]);
 
   const imageOpacity = interpolate(frame % 90, [10, 30], [0, 1], {
     extrapolateLeft: "clamp",
@@ -53,6 +50,7 @@ export const Phone: React.FC = () => {
   const videoIndex = Math.floor(frame / 240) % VIDEOS.length;
 
   useEffect(() => {
+    // Update video source every cycle
     video.current.src = VIDEOS[videoIndex];
     video.current.crossOrigin = "anonymous";
     video.current.loop = true;
