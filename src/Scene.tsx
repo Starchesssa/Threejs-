@@ -1,3 +1,4 @@
+
 import { ThreeCanvas } from "@remotion/three";
 import { AbsoluteFill, useVideoConfig } from "remotion";
 import React from "react";
@@ -14,7 +15,6 @@ export const Scene: React.FC = () => {
         frameloop="always"
         linear
       >
-        {/* CINEMATIC LIGHTING */}
         <ambientLight intensity={0.15} />
 
         <directionalLight
@@ -30,10 +30,8 @@ export const Scene: React.FC = () => {
           color="#4f8cff"
         />
 
-        {/* SCENE CONTENT */}
         <Phone />
       </ThreeCanvas>
     </AbsoluteFill>
   );
 };
-
