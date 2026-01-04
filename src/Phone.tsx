@@ -1,138 +1,97 @@
 
-import React, { useEffect, useMemo, useRef } from "react";
-import { useThree, useLoader } from "@react-three/fiber";
-import { TextureLoader, VideoTexture, LinearFilter } from "three";
-import {
-  interpolate,
-  spring,
-  useCurrentFrame,
-  useVideoConfig,
-} from "remotion";
-import { MediaItem } from "./media-sequence";
-import { IMAGE_SECONDS, FPS } from "./timing";
+import { useFrame, useLoader, useThree } from "@react-three/fiber";
+import React, { useMemo, useRef } from "react";
+import { useCurrentFrame } from "remotion";
+import { TextureLoader, VideoTexture, LinearFilter, Vector3 } from "three";
+import { IMAGES, VIDEOS } from "./media";
 
-export const Phone: React.FC<{
-  mediaSequence: MediaItem[];
-  videoFrameMap: Record<string, number>;
-}> = ({ mediaSequence, videoFrameMap }) => {
+interface MediaItem {
+  type: "image" | "video";
+  src: string;
+}
+
+// Combine images and videos safely
+export const MEDIA_SEQUENCE: MediaItem[] = [
+  ...IMAGES.filter(Boolean).map((src) => ({ type: "image", src })),
+  ...VIDEOS.filter(Boolean).map((src) => ({ type: "video", src })),
+];
+
+export const Phone: React.FC = () => {
+  const camera = useThree((state) => state.camera);
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const camera = useThree((s) => s.camera);
-
-  /* ----------------------------------
-     FIND CURRENT MEDIA BY ACCUMULATION
-  ---------------------------------- */
-
-  let accumulated = 0;
-  let current: MediaItem | null = null;
-  let localFrame = 0;
-
-  for (const item of mediaSequence) {
-    const duration =
-      item.type === "image"
-        ? IMAGE_SECONDS * FPS
-        : videoFrameMap[item.src];
-
-    if (frame < accumulated + duration) {
-      current = item;
-      localFrame = frame - accumulated;
-      break;
-    }
-    accumulated += duration;
-  }
-
-  if (!current) return null;
-
-  /* ----------------------------------
-     TEXTURES
-  ---------------------------------- */
-
-  const imageTexture = useLoader(
-    TextureLoader,
-    current.type === "image" ? current.src : ""
-  );
-
   const videoRef = useRef<HTMLVideoElement>(document.createElement("video"));
 
+  const totalItems = MEDIA_SEQUENCE.length;
+
+  if (totalItems === 0) return null;
+
+  // Loop over media
+  const currentIndex = frame % totalItems;
+  const currentMedia = MEDIA_SEQUENCE[currentIndex];
+
+  // Load image texture safely
+  const imageTexture =
+    currentMedia.type === "image" && currentMedia.src
+      ? useLoader(TextureLoader, [currentMedia.src])
+      : null;
+
+  // Load video texture safely
   const videoTexture = useMemo(() => {
-    const video = videoRef.current;
-    video.muted = true;
-    video.playsInline = true;
-    const tex = new VideoTexture(video);
-    tex.minFilter = LinearFilter;
-    tex.magFilter = LinearFilter;
-    return tex;
-  }, []);
-
-  useEffect(() => {
-    if (current?.type === "video") {
-      videoRef.current.src = current.src;
-      videoRef.current.currentTime = localFrame / fps;
-      videoRef.current.play();
+    if (currentMedia.type === "video" && currentMedia.src) {
+      videoRef.current.src = currentMedia.src;
+      videoRef.current.crossOrigin = "anonymous";
+      videoRef.current.loop = false;
+      videoRef.current.muted = true;
+      videoRef.current.play().catch(() => {});
+      const tex = new VideoTexture(videoRef.current);
+      tex.minFilter = LinearFilter;
+      tex.magFilter = LinearFilter;
+      return tex;
     }
-  }, [current, localFrame, fps]);
+    return null;
+  }, [currentMedia]);
 
-  /* ----------------------------------
-     MOTION GRAPHICS (MAGNATES STYLE)
-  ---------------------------------- */
-
-  const duration =
-    current.type === "image"
-      ? IMAGE_SECONDS * FPS
-      : videoFrameMap[current.src];
-
-  const progress = localFrame / duration;
-
-  const scale = spring({
-    fps,
-    frame: localFrame,
-    from: 1.25,
-    to: 1,
-    config: { damping: 200 },
+  // Camera smooth zoom effect
+  useFrame(() => {
+    const zoomStart = 6; // initial distance
+    const zoomEnd = 4.5; // closer zoom
+    const t = 0.02; // smoothing factor
+    const targetZ = zoomStart - (zoomStart - zoomEnd) * (currentIndex / totalItems);
+    camera.position.lerp(new Vector3(0, 0, targetZ), t);
+    camera.lookAt(0, 0, 0);
   });
-
-  const y = interpolate(progress, [0, 1], [-0.4, 0]);
-  const opacity = interpolate(progress, [0, 0.15], [0, 1]);
-
-  camera.position.z = interpolate(progress, [0, 1], [6, 4.5]);
-  camera.lookAt(0, 0, 0);
-
-  /* ----------------------------------
-     RENDER
-  ---------------------------------- */
 
   return (
     <>
-      <mesh position={[0, 0, -3]} scale={[10, 10, 1]}>
-        <planeGeometry />
-        <meshStandardMaterial color="#f3f3f3" />
-      </mesh>
-
-      {current.type === "image" && imageTexture && (
-        <mesh scale={[scale, scale, scale]} position={[0, y, 0]}>
+      {/* Render image */}
+      {currentMedia.type === "image" && imageTexture && (
+        <mesh>
           <planeGeometry
             args={[
               3,
-              3 *
-                (imageTexture.image.height /
-                  imageTexture.image.width),
+              3 * (imageTexture[0].image.height / imageTexture[0].image.width),
             ]}
           />
           <meshStandardMaterial
-            map={imageTexture}
+            map={imageTexture[0]}
             transparent
-            opacity={opacity}
+            opacity={1}
+            roughness={0.3}
+            metalness={0.1}
           />
         </mesh>
       )}
 
-      {current.type === "video" && (
-        <mesh scale={[scale, scale, scale]} position={[0, y, 0]}>
+      {/* Render video */}
+      {currentMedia.type === "video" && videoTexture && (
+        <mesh>
           <planeGeometry args={[4, 4 * 0.5625]} />
           <meshStandardMaterial
             map={videoTexture}
             transparent
-            opacity={opacity}
+            opacity={1}
+            roughness={0.2}
+            metalness={0}
           />
         </mesh>
       )}
