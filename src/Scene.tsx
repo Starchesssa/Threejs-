@@ -8,19 +8,12 @@ export const Scene: React.FC = () => {
   const { width, height } = useVideoConfig();
 
   return (
-    <AbsoluteFill style={{ backgroundColor: "#0b0b0f" }}>
-      <ThreeCanvas
-        width={width}
-        height={height}
-        frameloop="always"
-        linear
-      >
-        {/* CINEMATIC LIGHTING */}
-        <ambientLight intensity={0.2} />
-        <directionalLight position={[5, 10, 5]} intensity={1.5} />
-        <pointLight position={[-5, 2, 5]} intensity={0.5} color="#4f8cff" />
-
-        {/* IMAGE + VIDEO CONTENT */}
+    <AbsoluteFill style={{ backgroundColor: "#ffffff" }}> {/* bright white background */}
+      <ThreeCanvas width={width} height={height} frameloop="always" linear>
+        {/* Clean, cinematic lighting */}
+        <ambientLight intensity={0.8} />
+        <directionalLight position={[5, 10, 5]} intensity={1.2} />
+        <directionalLight position={[-5, -5, 5]} intensity={0.8} />
         <Phone />
       </ThreeCanvas>
     </AbsoluteFill>
