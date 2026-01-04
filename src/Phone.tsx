@@ -1,4 +1,4 @@
-
+import { useFrame, useThree } from "@react-three/fiber";
 import { useThree } from "@react-three/fiber";
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useCurrentFrame, useVideoConfig, Video } from "remotion";
