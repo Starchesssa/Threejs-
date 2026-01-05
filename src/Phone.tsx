@@ -1,116 +1,79 @@
-import { useThree } from "@react-three/fiber";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  interpolate,
-  spring,
-  useCurrentFrame,
-  useVideoConfig,
-  Video,
-} from "remotion";
-import {
-  CanvasTexture,
-  SRGBColorSpace,
-  Texture,
-} from "three";
-import { MEDIA, MediaItem } from "./media";
 
-const IMAGE_DURATION_FRAMES = 90; // 3s @ 30fps (smooth)
+import { useFrame, useThree } from "@react-three/fiber";
+import { useCurrentFrame } from "remotion";
+import React, { useRef } from "react";
+import { Mesh, Vector3 } from "three";
 
 export const Phone: React.FC = () => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
   const camera = useThree((s) => s.camera);
+  const frame = useCurrentFrame();
 
-  /* ---------- CAMERA ---------- */
-  useEffect(() => {
-    camera.position.set(0, 0, 6);
-    camera.lookAt(0, 0, 0);
-  }, [camera]);
+  // references for layers
+  const l1 = useRef<Mesh>(null);
+  const l2 = useRef<Mesh>(null);
+  const l3 = useRef<Mesh>(null);
+  const l4 = useRef<Mesh>(null);
 
-  /* ---------- MEDIA TIMELINE ---------- */
-  let current: MediaItem | null = null;
-  let frameCursor = 0;
-  let localFrame = frame;
+  /* ===============================
+     MAGNETTES MEDIA CAMERA
+     =============================== */
+  useFrame(() => {
+    const t = frame * 0.003;
 
-  for (const item of MEDIA) {
-    const duration =
-      item.type === "image" ? IMAGE_DURATION_FRAMES : Infinity;
+    const camPos = new Vector3(
+      Math.cos(t) * 6,
+      Math.sin(frame * 0.002) * 0.6,
+      Math.sin(t) * 6
+    );
 
-    if (localFrame < duration) {
-      current = item;
-      break;
-    }
-    localFrame -= duration;
-    frameCursor += duration;
-  }
-
-  if (!current) current = MEDIA[0];
-
-  /* ---------- CANVAS TEXTURE ---------- */
-  const [canvas] = useState(() => new OffscreenCanvas(1080, 1920));
-  const [ctx] = useState(() => {
-    const c = canvas.getContext("2d");
-    if (!c) throw new Error("No canvas context");
-    return c;
+    camera.position.lerp(camPos, 0.04);
+    camera.lookAt(0, 0, -3);
   });
 
-  const [texture] = useState<Texture>(() => {
-    const t = new CanvasTexture(canvas);
-    t.colorSpace = SRGBColorSpace;
-    return t;
+  /* ===============================
+     LAYER ANIMATIONS
+     =============================== */
+  useFrame(() => {
+    if (!l1.current || !l2.current || !l3.current || !l4.current) return;
+
+    l1.current.rotation.y = frame * 0.002;
+    l1.current.position.y = Math.sin(frame * 0.01) * 0.4;
+
+    l2.current.rotation.x = frame * 0.0015;
+    l2.current.position.y = Math.sin(frame * 0.008) * 0.5;
+
+    l3.current.rotation.y = frame * 0.001;
+    l3.current.position.y = Math.sin(frame * 0.006) * 0.6;
+
+    l4.current.rotation.x = frame * 0.0008;
+    l4.current.position.y = Math.sin(frame * 0.004) * 0.7;
   });
-
-  const { invalidate } = useThree();
-
-  /* ---------- VIDEO FRAME ---------- */
-  const onVideoFrame = useCallback(
-    (img: CanvasImageSource) => {
-      ctx.clearRect(0, 0, 1080, 1920);
-      ctx.drawImage(img, 0, 0, 1080, 1920);
-      texture.needsUpdate = true;
-      invalidate();
-    },
-    [ctx, texture, invalidate]
-  );
-
-  /* ---------- IMAGE DRAW ---------- */
-  useEffect(() => {
-    if (current?.type !== "image") return;
-
-    const img = new Image();
-    img.src = current.src;
-    img.onload = () => {
-      ctx.clearRect(0, 0, 1080, 1920);
-      ctx.drawImage(img, 0, 0, 1080, 1920);
-      texture.needsUpdate = true;
-      invalidate();
-    };
-  }, [current, ctx, texture, invalidate]);
-
-  /* ---------- MOTION ---------- */
-  const intro = spring({ frame, fps });
-  const rotateY = interpolate(frame, [0, 300], [0, Math.PI * 0.4]);
-  const floatY = Math.sin(frame / 20) * 0.12;
 
   return (
-    <group
-      scale={intro}
-      rotation={[0, rotateY, 0]}
-      position={[0, floatY, 0]}
-    >
-      {current.type === "video" && (
-        <Video
-          src={current.src}
-          onVideoFrame={onVideoFrame}
-          muted
-          headless
-        />
-      )}
-
-      <mesh>
-        <planeGeometry args={[3.2, 6]} />
-        <meshBasicMaterial map={texture} toneMapped={false} />
+    <>
+      {/* LAYER 1 — FOREGROUND */}
+      <mesh ref={l1} position={[0, 0, 0]}>
+        <boxGeometry args={[1.2, 3, 0.25]} />
+        <meshStandardMaterial color="#ff7a18" metalness={0.6} roughness={0.25} />
       </mesh>
-    </group>
+
+      {/* LAYER 2 */}
+      <mesh ref={l2} position={[-2, 0, -2]}>
+        <boxGeometry args={[1.2, 3, 0.25]} />
+        <meshStandardMaterial color="#4cc9f0" metalness={0.6} roughness={0.3} />
+      </mesh>
+
+      {/* LAYER 3 */}
+      <mesh ref={l3} position={[2, 0, -4]}>
+        <boxGeometry args={[1.2, 3, 0.25]} />
+        <meshStandardMaterial color="#b5179e" metalness={0.6} roughness={0.35} />
+      </mesh>
+
+      {/* LAYER 4 — BACK */}
+      <mesh ref={l4} position={[-1, 0, -6]}>
+        <boxGeometry args={[1.2, 3, 0.25]} />
+        <meshStandardMaterial color="#80ffdb" metalness={0.6} roughness={0.4} />
+      </mesh>
+    </>
   );
 };
