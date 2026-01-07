@@ -1,0 +1,31 @@
+
+name: remotion-render
+on: 
+  workflow_dispatch: {}  # allows manual triggering
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      # 1️⃣ Checkout repo
+      - uses: actions/checkout@v4
+
+      # 2️⃣ Setup Node
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      # 3️⃣ Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # 4️⃣ Render the video
+      - name: Render MP4
+        run: npx remotion render src/index.ts MagnettesScene out/video.mp4
+
+      # 5️⃣ Upload artifact
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: remotion-video
+          path: out/video.mp4
