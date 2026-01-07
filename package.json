@@ -1,4 +1,3 @@
-
 {
   "name": "template-three",
   "version": "1.0.0",
@@ -12,16 +11,16 @@
   "repository": {},
   "license": "UNLICENSED",
   "dependencies": {
-    "@react-three/fiber": "9.2.0",
-    "@react-three/drei": "^9.77.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "^4.0.0",
     "@remotion/cli": "^4.0.0",
     "@remotion/media": "^4.0.0",
     "@remotion/three": "^4.0.0",
     "@remotion/zod-types": "^4.0.0",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "remotion": "^4.0.0",
     "three": "0.178.0",
+    "@react-three/fiber": "^8.13.0",
+    "@react-three/drei": "^9.122.0",
     "zod": "3.22.3",
     "mediabunny": "1.27.2"
   },
