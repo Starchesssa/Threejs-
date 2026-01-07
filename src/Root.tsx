@@ -1,5 +1,4 @@
 // root.tsx
-import { registerRoot } from "remotion";
 import { Composition, Sequence } from "remotion";
 import { Scene } from "./Scene";
 
@@ -43,5 +42,3 @@ export const RemotionRoot: React.FC = () => {
     </>
   );
 };
-
-registerRoot(RemotionRoot);
