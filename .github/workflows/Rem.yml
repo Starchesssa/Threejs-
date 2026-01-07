@@ -21,4 +21,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: remotion-video
-          path: out/Scene.mp4
+          path: out/MagnettesScene.mp4
