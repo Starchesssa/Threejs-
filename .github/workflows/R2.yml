@@ -28,4 +28,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: remotion-video
-          path: out/video.mp4
+          path: out/Scene.mp4
