@@ -1,13 +1,17 @@
 
 // Scene.tsx
-import { AbsoluteFill, useVideoConfig } from "remotion";
+import { AbsoluteFill, useVideoConfig, staticFile } from "remotion";
 import { ThreeCanvas } from "@remotion/three";
 import { CameraRig } from "./CameraRig";
 import { useTexture } from "@react-three/drei";
 import React from "react";
 
 // Simple plane for PNGs
-const ImagePlane: React.FC<{ src: string; position: [number, number, number]; scale: [number, number, number] }> = ({ src, position, scale }) => {
+const ImagePlane: React.FC<{ src: string; position: [number, number, number]; scale: [number, number, number] }> = ({
+  src,
+  position,
+  scale,
+}) => {
   const texture = useTexture(src);
   return (
     <mesh position={position} scale={scale}>
@@ -45,9 +49,9 @@ interface SceneProps {
 }
 
 export const Scene: React.FC<SceneProps> = ({
-  person = "/P7.png",
-  tower = "/T3.png",
-  pole = "/Pole2.png",
+  person = "P7.png",
+  tower = "T3.png",
+  pole = "Pole2.png",
   slideDirection = "left",
   timeline,
 }) => {
@@ -64,14 +68,14 @@ export const Scene: React.FC<SceneProps> = ({
         {/* Camera */}
         <CameraRig slideDirection={slideDirection} timeline={timeline} />
 
-        {/* Foreground Pole (wipe transition) */}
-        <ImagePlane src={pole} position={[1.8, 1, -2]} scale={[3, 5, 1]} />
+        {/* Foreground Pole */}
+        <ImagePlane src={staticFile(pole)} position={[1.8, 1, -2]} scale={[3, 5, 1]} />
 
         {/* Person / Midground */}
-        <ImagePlane src={person} position={[0, 0.8, -6]} scale={[1.2, 2.2, 1]} />
+        <ImagePlane src={staticFile(person)} position={[0, 0.8, -6]} scale={[1.2, 2.2, 1]} />
 
         {/* Tower / Background */}
-        <ImagePlane src={tower} position={[0, 1.5, -12]} scale={[6, 8, 1]} />
+        <ImagePlane src={staticFile(tower)} position={[0, 1.5, -12]} scale={[6, 8, 1]} />
 
         {/* Atmosphere / Dust */}
         <Dust />
