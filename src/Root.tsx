@@ -1,20 +1,47 @@
+// root.tsx
 import { registerRoot } from "remotion";
-import { Composition } from "remotion";
-import { Scene, SCENE_DURATION, SCENE_FPS } from "./Scene";
+import { Composition, Sequence } from "remotion";
+import { Scene } from "./Scene";
 
-// Register the root for Remotion
+const FPS = 30;
+
 export const RemotionRoot: React.FC = () => {
   return (
-    <Composition
-      id="MagnettesScene"          // Unique composition ID
-      component={Scene}            // Scene contains camera + layers
-      fps={SCENE_FPS}              // Duration control comes from Scene.tsx
-      durationInFrames={SCENE_DURATION}
-      width={1920}                 // Full HD cinematic
-      height={1080}
-    />
+    <>
+      {/* Scene 1: 50 sec */}
+      <Sequence from={0} durationInFrames={50 * FPS}>
+        <Scene
+          person="/P1.png"
+          tower="/T1.png"
+          pole="/Pole1.png"
+          slideDirection="left"
+          timeline={{ pushIn: [0, 10], pullBack: [10, 35], slide: [35, 50] }}
+        />
+      </Sequence>
+
+      {/* Scene 2: 50 sec */}
+      <Sequence from={50 * FPS} durationInFrames={50 * FPS}>
+        <Scene
+          person="/P2.png"
+          tower="/T2.png"
+          pole="/Pole2.png"
+          slideDirection="right"
+          timeline={{ pushIn: [0, 10], pullBack: [10, 35], slide: [35, 50] }}
+        />
+      </Sequence>
+
+      {/* Scene 3: 50 sec */}
+      <Sequence from={100 * FPS} durationInFrames={50 * FPS}>
+        <Scene
+          person="/P3.png"
+          tower="/T3.png"
+          pole="/Pole3.png"
+          slideDirection="left"
+          timeline={{ pushIn: [0, 10], pullBack: [10, 35], slide: [35, 50] }}
+        />
+      </Sequence>
+    </>
   );
 };
 
-// This line ensures Remotion knows the root
 registerRoot(RemotionRoot);
