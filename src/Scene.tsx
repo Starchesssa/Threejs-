@@ -1,7 +1,12 @@
 
 // Scene.tsx
 import React from "react";
-import { AbsoluteFill, staticFile, useCurrentFrame } from "remotion";
+import {
+  AbsoluteFill,
+  staticFile,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
 import { ThreeCanvas } from "@remotion/three";
 import * as THREE from "three";
 import { useLoader } from "@react-three/fiber";
@@ -9,17 +14,15 @@ import { CameraRig } from "./CameraRig";
 
 export const Scene: React.FC = () => {
   const frame = useCurrentFrame();
+  const { width, height } = useVideoConfig(); // ✅ REQUIRED
 
-  // Each scene duration
   const SCENE_FRAMES = 120;
   const sceneIndex = Math.floor(frame / SCENE_FRAMES);
 
-  // ✅ Hard safety: never NaN, never 0
   const personIndex = Math.max(1, (sceneIndex % 12) + 1);
   const poleIndex = Math.max(1, (sceneIndex % 3) + 1);
   const towerIndex = Math.max(1, (sceneIndex % 4) + 1);
 
-  // Load textures
   const personTex = useLoader(
     THREE.TextureLoader,
     staticFile(`P${personIndex}.png`)
@@ -33,7 +36,6 @@ export const Scene: React.FC = () => {
     staticFile(`T${towerIndex}.png`)
   );
 
-  // Correct color space
   personTex.colorSpace =
     poleTex.colorSpace =
     towerTex.colorSpace =
@@ -41,8 +43,12 @@ export const Scene: React.FC = () => {
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#0b0b0b" }}>
-      <ThreeCanvas frameloop="always" linear>
-
+      <ThreeCanvas
+        width={width}     // ✅ FIX
+        height={height}   // ✅ FIX
+        frameloop="always"
+        linear
+      >
         {/* Lighting */}
         <ambientLight intensity={0.35} />
         <directionalLight position={[6, 8, 4]} intensity={1.3} />
@@ -68,7 +74,6 @@ export const Scene: React.FC = () => {
           <planeGeometry />
           <meshStandardMaterial map={towerTex} transparent />
         </mesh>
-
       </ThreeCanvas>
     </AbsoluteFill>
   );
