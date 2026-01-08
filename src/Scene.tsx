@@ -22,7 +22,7 @@ export const Scene: React.FC = () => {
   // Load textures
   const personTex = useLoader(
     THREE.TextureLoader,
-    staticFile(`p${personIndex}.png`)
+    staticFile(`P${personIndex}.png`)
   );
   const poleTex = useLoader(
     THREE.TextureLoader,
