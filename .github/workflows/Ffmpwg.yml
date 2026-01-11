@@ -1,5 +1,4 @@
-
-name: Render Parallax Video
+name: Render Parallax Video with OpenCV
 
 on:
   workflow_dispatch:
@@ -7,34 +6,29 @@ on:
 jobs:
   render:
     runs-on: ubuntu-latest
+
     steps:
-      # Step 1: Checkout repo
+      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Install Python
+      # 2️⃣ Set up Python
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: "3.11"
 
-      # Step 3: Install FFmpeg
-      - name: Install FFmpeg
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y ffmpeg
-
-      # Step 4: Install dependencies if needed
+      # 3️⃣ Install dependencies
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          # add other packages if your script needs them
+          python -m pip install --upgrade pip
+          pip install opencv-python-headless numpy
 
-      # Step 5: Run Python script
-      - name: Render Parallax Video
-        run: python3 FFMPEG.py
+      # 4️⃣ Run Python render script
+      - name: Render video
+        run: python Cv.py
 
-      # Step 6: Upload rendered video as artifact
+      # 5️⃣ Upload artifact
       - name: Upload rendered video
         uses: actions/upload-artifact@v4
         with:
