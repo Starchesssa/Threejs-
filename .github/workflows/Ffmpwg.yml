@@ -112,7 +112,7 @@ jobs:
               -loop 1 -t ${SCENE_DUR} -i public/T3.png \
               -loop 1 -t ${SCENE_DUR} -i public/T4.png \
               -loop 1 -t ${SCENE_DUR} -i public/House.png \
-              -loop 1 -t ${SCENE_DUR} -i public/RG.png \
+              -loop 1 -t ${SCENE_DUR} -i public/P3.png \
               -loop 1 -t ${SCENE_DUR} -i public/P1.png \
               -loop 1 -t ${SCENE_DUR} -i public/P5.png \
               -loop 1 -t ${SCENE_DUR} -i public/P9.png \
@@ -152,7 +152,7 @@ jobs:
               -loop 1 -t ${SCENE_DUR} -i public/T3.png \
               -loop 1 -t ${SCENE_DUR} -i public/T4.png \
               -loop 1 -t ${SCENE_DUR} -i public/House.png \
-              -loop 1 -t ${SCENE_DUR} -i public/RG.png \
+              -loop 1 -t ${SCENE_DUR} -i public/P3.png \
               -loop 1 -t ${SCENE_DUR} -i public/P1.png \
               -loop 1 -t ${SCENE_DUR} -i public/P5.png \
               -loop 1 -t ${SCENE_DUR} -i public/P9.png \
