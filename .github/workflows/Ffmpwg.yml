@@ -8,192 +8,34 @@ jobs:
   render:
     runs-on: ubuntu-latest
     steps:
+      # Step 1: Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install ffmpeg
+      # Step 2: Install Python
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      # Step 3: Install FFmpeg
+      - name: Install FFmpeg
         run: |
           sudo apt-get update -y
           sudo apt-get install -y ffmpeg
 
-      - name: Write render script
+      # Step 4: Install dependencies if needed
+      - name: Install dependencies
         run: |
-          cat > render_parallax.sh <<'BASH'
-          #!/usr/bin/env bash
-          set -euo pipefail
+          pip install --upgrade pip
+          # add other packages if your script needs them
 
-          SCENE_DUR=6
-          OFFSET=$((SCENE_DUR - 1))
-          OUT="public/out_parallax.mp4"
-          mkdir -p public
-          TMP_A="public/_sceneA.mp4"
-          TMP_B="public/_sceneB.mp4"
+      # Step 5: Run Python script
+      - name: Render Parallax Video
+        run: python3 FFMPEG.py
 
-          # Render scene A directly to a stream if xfader exists, otherwise to TMP_A
-          ffmpeg -y \
-            -loop 1 -t ${SCENE_DUR} -i public/T1.png \
-            -loop 1 -t ${SCENE_DUR} -i public/T2.png \
-            -loop 1 -t ${SCENE_DUR} -i public/T3.png \
-            -loop 1 -t ${SCENE_DUR} -i public/T4.png \
-            -loop 1 -t ${SCENE_DUR} -i public/House.png \
-            -loop 1 -t ${SCENE_DUR} -i public/RG.png \
-            -loop 1 -t ${SCENE_DUR} -i public/P1.png \
-            -loop 1 -t ${SCENE_DUR} -i public/P5.png \
-            -loop 1 -t ${SCENE_DUR} -i public/P9.png \
-            -i public/Cloud.mp4 \
-            -i public/Cloud1.mp4 \
-            -loop 1 -t ${SCENE_DUR} -i public/Pole1.png \
-            -filter_complex "
-            color=size=1920x1080:color=black:d=${SCENE_DUR} [base0];
-
-            [9:v] setpts=PTS-STARTPTS, scale=1920x1080, format=rgba [cloud0];
-            [10:v] setpts=PTS-STARTPTS, scale=1920x1080, format=rgba [cloud1];
-
-            [base0][cloud0] overlay=shortest=1:x=0:y=0 [sA0];
-            [sA0][cloud1] overlay=shortest=1:x=0:y=0 [sA1];
-
-            [0:v] setpts=PTS-STARTPTS, scale=800:-1, format=rgba, pad=1920:1080:(ow-iw)/2:oh-ih-60 [t1];
-            [sA1][t1] overlay=shortest=1:x='(W-w)/2 + (t*20)*0.06':y='H-h-60' [sA2];
-
-            [1:v] setpts=PTS-STARTPTS, scale=700:-1, format=rgba, pad=1920:1080:(ow-iw)/2:oh-ih-60 [t2];
-            [sA2][t2] overlay=shortest=1:x='(W-w)/2 + (t*20)*0.07 - 200':y='H-h-60' [sA3];
-
-            [2:v] setpts=PTS-STARTPTS, scale=700:-1, format=rgba, pad=1920:1080:(ow-iw)/2:oh-ih-60 [t3];
-            [sA3][t3] overlay=shortest=1:x='(W-w)/2 + (t*20)*0.05 + 200':y='H-h-60' [sA4];
-
-            [3:v] setpts=PTS-STARTPTS, scale=750:-1, format=rgba, pad=1920:1080:(ow-iw)/2:oh-ih-60 [t4];
-            [sA4][t4] overlay=shortest=1:x='(W-w)/2 + (t*20)*0.055 - 80':y='H-h-60' [sA5];
-
-            [4:v] setpts=PTS-STARTPTS, scale=900:-1, format=rgba, pad=1920:1080:(ow-iw)/2:oh-ih-0 [house];
-            [sA5][house] overlay=shortest=1:x='(W-w)/2 + (t*40)*0.18':y='H-h - (t*5)*0.18' [sA6];
-
-            [6:v] setpts=PTS-STARTPTS, scale=350:-1, format=rgba, pad=1920:1080:(ow-iw)/2:oh-ih-200 [p1];
-            [sA6][p1] overlay=shortest=1:x='(W-w)/6 + (t*80)*0.45':y='H-h-200' [sA7];
-
-            [7:v] setpts=PTS-STARTPTS, scale=500:-1, format=rgba, pad=1920:1080:(ow-iw)/2:oh-ih-100 [p5];
-            [sA7][p5] overlay=shortest=1:x='(W-w)*0.7 + (t*80)*0.5':y='H-h-100' [sA8];
-
-            [8:v] setpts=PTS-STARTPTS, scale=700:-1, format=rgba, pad=1920:1080:(ow-iw)/2:oh-ih-150 [p9];
-            [sA8][p9] overlay=shortest=1:x='(W-w)*0.25 + (t*80)*0.6':y='H-h-150' [sceneA];
-
-            [sceneA] boxblur=luma_radius='if(lt(t,3),0,2)':luma_power=1 [sceneAout];
-
-            color=size=1920x1080:color=black:d=${SCENE_DUR} [base1];
-            [9:v] setpts=PTS-STARTPTS, scale=1920x1080, format=rgba [cloud0b];
-            [10:v] setpts=PTS-STARTPTS, scale=1920x1080, format=rgba [cloud1b];
-            [base1][cloud0b] overlay=shortest=1:x=0:y=0 [sB0];
-            [sB0][cloud1b] overlay=shortest=1:x=0:y=0 [sB1];
-
-            [0:v] setpts=PTS-STARTPTS, scale=800:-1, format=rgba, pad=1920:1080:(ow-iw)/2:oh-ih-60 [t1b];
-            [sB1][t1b] overlay=shortest=1:x='(W-w)/2 + (t*-30)*0.06':y='H-h-60' [sB2];
-
-            [1:v] setpts=PTS-STARTPTS, scale=700:-1, format=rgba, pad=1920:1080:(ow-iw)/2:oh-ih-60 [t2b];
-            [sB2][t2b] overlay=shortest=1:x='(W-w)/2 + (t*-30)*0.07 - 200':y='H-h-60' [sB3];
-
-            [4:v] setpts=PTS-STARTPTS, scale=900:-1, format=rgba, pad=1920:1080:(ow-iw)/2:oh-ih-0 [houseb];
-            [sB3][houseb] overlay=shortest=1:x='(W-w)/2 + (t*-30)*0.18':y='H-h - (t*3)*0.18' [sB4];
-
-            [sB4] boxblur=luma_radius='if(lt(t,3),0,1.5)':luma_power=1 [sceneBout];
-
-            [sceneAout]format=yuva420p, setpts=PTS-STARTPTS [A];
-            [sceneBout]format=yuva420p, setpts=PTS-STARTPTS [B];
-
-            [A][B] xfader=transition=fade:duration=1:offset=${OFFSET} [outv]
-            " -map "[outv]" -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p "${OUT}" || true
-
-          # If the above failed because xfader is not available, render scenes separately and blend
-          if [ ! -f "${OUT}" ] || [ ! -s "${OUT}" ]; then
-            echo "xfader path failed or not supported; rendering intermediate scenes and blending as fallback."
-
-            # Render scene A to TMP_A
-            ffmpeg -y \
-              -loop 1 -t ${SCENE_DUR} -i public/T1.png \
-              -loop 1 -t ${SCENE_DUR} -i public/T2.png \
-              -loop 1 -t ${SCENE_DUR} -i public/T3.png \
-              -loop 1 -t ${SCENE_DUR} -i public/T4.png \
-              -loop 1 -t ${SCENE_DUR} -i public/House.png \
-              -loop 1 -t ${SCENE_DUR} -i public/P3.png \
-              -loop 1 -t ${SCENE_DUR} -i public/P1.png \
-              -loop 1 -t ${SCENE_DUR} -i public/P5.png \
-              -loop 1 -t ${SCENE_DUR} -i public/P9.png \
-              -i public/Cloud.mp4 \
-              -i public/Cloud1.mp4 \
-              -loop 1 -t ${SCENE_DUR} -i public/Pole1.png \
-              -filter_complex "
-              color=size=1920x1080:color=black:d=${SCENE_DUR} [base0];
-              [9:v] setpts=PTS-STARTPTS, scale=1920x1080, format=rgba [cloud0];
-              [10:v] setpts=PTS-STARTPTS, scale=1920x1080, format=rgba [cloud1];
-              [base0][cloud0] overlay=shortest=1:x=0:y=0 [sA0];
-              [sA0][cloud1] overlay=shortest=1:x=0:y=0 [sA1];
-              [0:v] setpts=PTS-STARTPTS, scale=800:-1, format=rgba, pad=1920:1080:(ow-iw)/2:oh-ih-60 [t1];
-              [sA1][t1] overlay=shortest=1:x='(W-w)/2 + (t*20)*0.06':y='H-h-60' [sA2];
-              [1:v] setpts=PTS-STARTPTS, scale=700:-1, format=rgba, pad=1920:1080:(ow-iw)/2:oh-ih-60 [t2];
-              [sA2][t2] overlay=shortest=1:x='(W-w)/2 + (t*20)*0.07 - 200':y='H-h-60' [sA3];
-              [2:v] setpts=PTS-STARTPTS, scale=700:-1, format=rgba, pad=1920:1080:(ow-iw)/2:oh-ih-60 [t3];
-              [sA3][t3] overlay=shortest=1:x='(W-w)/2 + (t*20)*0.05 + 200':y='H-h-60' [sA4];
-              [3:v] setpts=PTS-STARTPTS, scale=750:-1, format=rgba, pad=1920:1080:(ow-iw)/2:oh-ih-60 [t4];
-              [sA4][t4] overlay=shortest=1:x='(W-w)/2 + (t*20)*0.055 - 80':y='H-h-60' [sA5];
-              [4:v] setpts=PTS-STARTPTS, scale=900:-1, format=rgba, pad=1920:1080:(ow-iw)/2:oh-ih-0 [house];
-              [sA5][house] overlay=shortest=1:x='(W-w)/2 + (t*40)*0.18':y='H-h - (t*5)*0.18' [sA6];
-              [6:v] setpts=PTS-STARTPTS, scale=350:-1, format=rgba, pad=1920:1080:(ow-iw)/2:oh-ih-200 [p1];
-              [sA6][p1] overlay=shortest=1:x='(W-w)/6 + (t*80)*0.45':y='H-h-200' [sA7];
-              [7:v] setpts=PTS-STARTPTS, scale=500:-1, format=rgba, pad=1920:1080:(ow-iw)/2:oh-ih-100 [p5];
-              [sA7][p5] overlay=shortest=1:x='(W-w)*0.7 + (t*80)*0.5':y='H-h-100' [sA8];
-              [8:v] setpts=PTS-STARTPTS, scale=700:-1, format=rgba, pad=1920:1080:(ow-iw)/2:oh-ih-150 [p9];
-              [sA8][p9] overlay=shortest=1:x='(W-w)*0.25 + (t*80)*0.6':y='H-h-150' [sceneA];
-              [sceneA] boxblur=luma_radius='if(lt(t,3),0,2)':luma_power=1 [sceneAout];
-              [sceneAout]format=yuv420p
-              " -map "[0:v]" -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p "${TMP_A}"
-
-            # Render scene B to TMP_B
-            ffmpeg -y \
-              -loop 1 -t ${SCENE_DUR} -i public/T1.png \
-              -loop 1 -t ${SCENE_DUR} -i public/T2.png \
-              -loop 1 -t ${SCENE_DUR} -i public/T3.png \
-              -loop 1 -t ${SCENE_DUR} -i public/T4.png \
-              -loop 1 -t ${SCENE_DUR} -i public/House.png \
-              -loop 1 -t ${SCENE_DUR} -i public/P3.png \
-              -loop 1 -t ${SCENE_DUR} -i public/P1.png \
-              -loop 1 -t ${SCENE_DUR} -i public/P5.png \
-              -loop 1 -t ${SCENE_DUR} -i public/P9.png \
-              -i public/Cloud.mp4 \
-              -i public/Cloud1.mp4 \
-              -loop 1 -t ${SCENE_DUR} -i public/Pole1.png \
-              -filter_complex "
-              color=size=1920x1080:color=black:d=${SCENE_DUR} [base1];
-              [9:v] setpts=PTS-STARTPTS, scale=1920x1080, format=rgba [cloud0b];
-              [10:v] setpts=PTS-STARTPTS, scale=1920x1080, format=rgba [cloud1b];
-              [base1][cloud0b] overlay=shortest=1:x=0:y=0 [sB0];
-              [sB0][cloud1b] overlay=shortest=1:x=0:y=0 [sB1];
-              [0:v] setpts=PTS-STARTPTS, scale=800:-1, format=rgba, pad=1920:1080:(ow-iw)/2:oh-ih-60 [t1b];
-              [sB1][t1b] overlay=shortest=1:x='(W-w)/2 + (t*-30)*0.06':y='H-h-60' [sB2];
-              [1:v] setpts=PTS-STARTPTS, scale=700:-1, format=rgba, pad=1920:1080:(ow-iw)/2:oh-ih-60 [t2b];
-              [sB2][t2b] overlay=shortest=1:x='(W-w)/2 + (t*-30)*0.07 - 200':y='H-h-60' [sB3];
-              [4:v] setpts=PTS-STARTPTS, scale=900:-1, format=rgba, pad=1920:1080:(ow-iw)/2:oh-ih-0 [houseb];
-              [sB3][houseb] overlay=shortest=1:x='(W-w)/2 + (t*-30)*0.18':y='H-h - (t*3)*0.18' [sB4];
-              [sB4] boxblur=luma_radius='if(lt(t,3),0,1.5)':luma_power=1 [sceneBout];
-              [sceneBout]format=yuv420p
-              " -map "[0:v]" -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p "${TMP_B}"
-
-            # Blend TMP_A and TMP_B with a 1s crossfade using fade+overlay
-            ffmpeg -y -i "${TMP_A}" -i "${TMP_B}" -filter_complex \
-              "[0:v]format=yuva420p,fade=t=out:st=${OFFSET}:d=1:alpha=1[A]; \
-               [1:v]format=yuva420p,fade=t=in:st=0:d=1:alpha=1[B]; \
-               [A][B]overlay" -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p "${OUT}"
-
-            # cleanup
-            rm -f "${TMP_A}" "${TMP_B}"
-          fi
-
-          echo "Render complete: ${OUT}"
-          BASH
-          chmod +x render_parallax.sh
-
-      - name: Run render script
-        run: |
-          ./render_parallax.sh
-
-      - name: Upload rendered video artifact
+      # Step 6: Upload rendered video as artifact
+      - name: Upload rendered video
         uses: actions/upload-artifact@v4
         with:
           name: out_parallax
