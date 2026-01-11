@@ -3,79 +3,92 @@ import numpy as np
 import os
 
 # --- SETTINGS ---
-SCENE_DUR = 6         # seconds
-FPS = 30
+SCENE_DUR = 6          # seconds
+FPS = 60
+FRAME_COUNT = SCENE_DUR * FPS
 WIDTH, HEIGHT = 1920, 1080
-OUT = "public/out_parallax.mp4"
+OUT_VIDEO = "public/out_parallax_cv.mp4"
 
+# Ensure output dir exists
 os.makedirs("public", exist_ok=True)
 
-# --- LOAD LAYERS ---
-# PNGs with alpha
-T1 = cv2.imread("public/T1.png", cv2.IMREAD_UNCHANGED)
-T2 = cv2.imread("public/T2.png", cv2.IMREAD_UNCHANGED)
-T3 = cv2.imread("public/T3.png", cv2.IMREAD_UNCHANGED)
-T4 = cv2.imread("public/T4.png", cv2.IMREAD_UNCHANGED)
-House = cv2.imread("public/House.png", cv2.IMREAD_UNCHANGED)
-P1 = cv2.imread("public/P1.png", cv2.IMREAD_UNCHANGED)
-P5 = cv2.imread("public/P5.png", cv2.IMREAD_UNCHANGED)
-P9 = cv2.imread("public/P9.png", cv2.IMREAD_UNCHANGED)
-Pole1 = cv2.imread("public/Pole1.png", cv2.IMREAD_UNCHANGED)
+# --- LOAD IMAGES ---
+# Each layer should be a PNG with alpha channel
+layers = {
+    "BG": cv2.imread("public/T1.png", cv2.IMREAD_UNCHANGED),
+    "MG": cv2.imread("public/T2.png", cv2.IMREAD_UNCHANGED),
+    "FG": cv2.imread("public/T3.png", cv2.IMREAD_UNCHANGED),
+    "House": cv2.imread("public/House.png", cv2.IMREAD_UNCHANGED),
+    "P1": cv2.imread("public/P1.png", cv2.IMREAD_UNCHANGED),
+    "P5": cv2.imread("public/P5.png", cv2.IMREAD_UNCHANGED),
+    "P9": cv2.imread("public/P9.png", cv2.IMREAD_UNCHANGED),
+    "Pole": cv2.imread("public/Pole1.png", cv2.IMREAD_UNCHANGED),
+}
 
-# Optional: load video layers
-Cloud = cv2.VideoCapture("public/Cloud.mp4")
-Cloud1 = cv2.VideoCapture("public/Cloud1.mp4")
+# Optional: Load cloud video layers
+cloud1_cap = cv2.VideoCapture("public/Cloud.mp4")
+cloud2_cap = cv2.VideoCapture("public/Cloud1.mp4")
 
-# --- VIDEO WRITER ---
-fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-out = cv2.VideoWriter(OUT, fourcc, FPS, (WIDTH, HEIGHT))
+# --- UTILITY FUNCTION ---
+def overlay_alpha(base, overlay, x, y):
+    """Overlay a PNG with alpha channel onto base image at (x, y)."""
+    h, w = overlay.shape[:2]
+    bh, bw = base.shape[:2]
 
-total_frames = SCENE_DUR * FPS
+    # Crop overlay if it goes out of bounds
+    if y + h > bh:
+        h = bh - y
+        overlay = overlay[:h, :, :]
+    if x + w > bw:
+        w = bw - x
+        overlay = overlay[:, :w, :]
 
-for f in range(total_frames):
-    frame = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)  # black background
-
-    # --- Overlay clouds from video ---
-    def overlay_video(cap):
-        ret, img = cap.read()
-        if not ret:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            ret, img = cap.read()
-        img = cv2.resize(img, (WIDTH, HEIGHT))
-        return img
-
-    cloud_frame = overlay_video(Cloud)
-    cloud_frame1 = overlay_video(Cloud1)
-
-    # simple overlay using max (replace pixels)
-    frame = cv2.addWeighted(frame, 1.0, cloud_frame, 0.6, 0)
-    frame = cv2.addWeighted(frame, 1.0, cloud_frame1, 0.6, 0)
-
-    # --- Overlay PNG layers with alpha ---
-    def overlay_alpha(base, overlay, x, y):
-        if overlay.shape[2] < 4:
-            base[y:y+overlay.shape[0], x:x+overlay.shape[1]] = overlay
-        else:
-            alpha = overlay[:, :, 3] / 255.0
-            for c in range(3):
-                base[y:y+overlay.shape[0], x:x+overlay.shape[1], c] = \
-                    overlay[:, :, c] * alpha + base[y:y+overlay.shape[0], x:x+overlay.shape[1], c] * (1-alpha)
+    if overlay.shape[2] < 4:
+        # No alpha, just overlay
+        base[y:y+h, x:x+w] = overlay
         return base
 
-    # Example simple parallax positions
-    frame = overlay_alpha(frame, T1, int(f*2), 0)
-    frame = overlay_alpha(frame, T2, int(f*3), 50)
-    frame = overlay_alpha(frame, T3, int(f*1.5), 100)
-    frame = overlay_alpha(frame, T4, int(f*2.2), 150)
-    frame = overlay_alpha(frame, House, int(f*1.8), 200)
-    frame = overlay_alpha(frame, P1, int(f*2.5), 300)
-    frame = overlay_alpha(frame, P5, int(f*2), 400)
-    frame = overlay_alpha(frame, P9, int(f*1.2), 500)
-    frame = overlay_alpha(frame, Pole1, int(f*1.5), 600)
+    alpha = overlay[:, :, 3] / 255.0
+    for c in range(3):
+        base[y:y+h, x:x+w, c] = (alpha * overlay[:h, :w, c] +
+                                 (1 - alpha) * base[y:y+h, x:x+w, c])
+    return base
+
+# --- SETUP VIDEO WRITER ---
+fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+out = cv2.VideoWriter(OUT_VIDEO, fourcc, FPS, (WIDTH, HEIGHT))
+
+# --- GENERATE FRAMES ---
+for f in range(FRAME_COUNT):
+    frame = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)  # black background
+
+    t = f / FPS  # current time in seconds
+
+    # Overlay layers with simple parallax motion
+    frame = overlay_alpha(frame, cv2.resize(layers["BG"], (WIDTH, HEIGHT)), int(t*10), 0)
+    frame = overlay_alpha(frame, cv2.resize(layers["MG"], (900, 600)), int(t*20), 100)
+    frame = overlay_alpha(frame, cv2.resize(layers["FG"], (800, 500)), int(t*30), 200)
+    frame = overlay_alpha(frame, cv2.resize(layers["House"], (700, 700)), int(t*40), 250)
+    frame = overlay_alpha(frame, cv2.resize(layers["P1"], (350, 350)), int(t*50), 400)
+    frame = overlay_alpha(frame, cv2.resize(layers["P5"], (400, 400)), int(t*60), 450)
+    frame = overlay_alpha(frame, cv2.resize(layers["P9"], (450, 450)), int(t*70), 500)
+    frame = overlay_alpha(frame, cv2.resize(layers["Pole"], (200, 800)), int(t*20), 550)
+
+    # Overlay cloud video frames
+    ret1, cloud1_frame = cloud1_cap.read()
+    if ret1:
+        cloud1_frame = cv2.resize(cloud1_frame, (WIDTH, HEIGHT))
+        frame = cv2.addWeighted(frame, 1.0, cloud1_frame, 0.5, 0)
+
+    ret2, cloud2_frame = cloud2_cap.read()
+    if ret2:
+        cloud2_frame = cv2.resize(cloud2_frame, (WIDTH, HEIGHT))
+        frame = cv2.addWeighted(frame, 1.0, cloud2_frame, 0.5, 0)
 
     out.write(frame)
 
+# --- CLEANUP ---
 out.release()
-Cloud.release()
-Cloud1.release()
-print(f"Video saved to {OUT}")
+cloud1_cap.release()
+cloud2_cap.release()
+print(f"Render complete: {OUT_VIDEO}")
