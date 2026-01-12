@@ -14,13 +14,13 @@ type LayerProps = {
   isVideo?: boolean;
 };
 
-const Layer: React.FC<LayerProps> = ({
+const Layer = ({
   src,
   depth,
   scale = 1,
   yOffset = 0,
   isVideo = false,
-}) => {
+}: LayerProps) => {
   const frame = useCurrentFrame();
 
   // Slow cinematic push-in
@@ -28,7 +28,7 @@ const Layer: React.FC<LayerProps> = ({
     extrapolateRight: 'clamp',
   });
 
-  // Magnates-style parallax
+  // Parallax movement
   const z = depth * push;
   const x = depth * push * 0.12;
   const y = yOffset + depth * push * 0.04;
@@ -51,15 +51,16 @@ const Layer: React.FC<LayerProps> = ({
     <Video src={src} style={style} />
   ) : (
     <img src={src} style={style} />
+  );
 };
 
-export const Scene: React.FC = () => {
+export const Scene = () => {
   return (
     <AbsoluteFill
       style={{
         backgroundColor: '#000',
         overflow: 'hidden',
-        perspective: 1400,
+        perspective: '1400px', // MUST be a string
         transformStyle: 'preserve-3d',
       }}
     >
