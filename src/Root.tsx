@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Composition } from 'remotion';
-import { Scene } from './Scene';
+import Scene from './Scene'; // default import because Scene.tsx uses export default
 
 export const Root: React.FC = () => {
   return (
