@@ -1,14 +1,16 @@
+
 import React from 'react';
 import {
   AbsoluteFill,
   useCurrentFrame,
   interpolate,
   Video,
+  staticFile,
 } from 'remotion';
 
 type LayerProps = {
   src: string;
-  depth: number; // higher = closer to camera
+  depth: number;
   scale?: number;
   yOffset?: number;
   isVideo?: boolean;
@@ -23,12 +25,11 @@ const Layer = ({
 }: LayerProps) => {
   const frame = useCurrentFrame();
 
-  // Slow cinematic push-in
+  // Smooth cinematic push
   const push = interpolate(frame, [0, 240], [0, 1], {
     extrapolateRight: 'clamp',
   });
 
-  // Parallax movement
   const z = depth * push;
   const x = depth * push * 0.12;
   const y = yOffset + depth * push * 0.04;
@@ -47,54 +48,64 @@ const Layer = ({
     pointerEvents: 'none',
   };
 
-  return isVideo ? (
-    <Video src={src} style={style} />
-  ) : (
-    <img src={src} style={style} />
-  );
+  if (isVideo) {
+    return (
+      <Video
+        src={staticFile(src)}
+        style={style}
+        startFrom={0}
+        muted
+        onError={(e) => {
+          console.error('Video failed:', src, e);
+        }}
+      />
+    );
+  }
+
+  return <img src={staticFile(src)} style={style} />;
 };
 
-export const Scene = () => {
+export const CinematicScene = () => {
   return (
     <AbsoluteFill
       style={{
         backgroundColor: '#000',
         overflow: 'hidden',
-        perspective: '1400px', // MUST be a string
+        perspective: '1400px',
         transformStyle: 'preserve-3d',
       }}
     >
-      {/* BACKGROUND — CLOUD VIDEO */}
+      {/* BACKGROUND */}
       <Layer
-        src="/Cloud.mp4"
+        src="Cloud.mp4"
         isVideo
         depth={-700}
         scale={2.8}
       />
 
-      {/* MIDGROUND — HOUSE PNG */}
+      {/* MIDGROUND */}
       <Layer
-        src="/House.png"
+        src="House.png"
         depth={-250}
         scale={1.6}
       />
 
-      {/* FOREGROUND — PERSON */}
+      {/* FOREGROUND */}
       <Layer
-        src="/P5.png"
+        src="P5.png"
         depth={250}
         scale={1.15}
         yOffset={40}
       />
 
-      {/* EXTREME FOREGROUND — POLES */}
+      {/* EXTREME FOREGROUND */}
       <Layer
-        src="/Pole1.png"
+        src="Pole1.png"
         depth={700}
         scale={1.9}
       />
       <Layer
-        src="/Pole1.png"
+        src="Pole1.png"
         depth={900}
         scale={2.2}
       />
