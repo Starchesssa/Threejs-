@@ -25,7 +25,6 @@ const Layer = ({
 }: LayerProps) => {
   const frame = useCurrentFrame();
 
-  // Smooth cinematic push
   const push = interpolate(frame, [0, 240], [0, 1], {
     extrapolateRight: 'clamp',
   });
@@ -53,11 +52,7 @@ const Layer = ({
       <Video
         src={staticFile(src)}
         style={style}
-        startFrom={0}
         muted
-        onError={(e) => {
-          console.error('Video failed:', src, e);
-        }}
       />
     );
   }
@@ -65,7 +60,7 @@ const Layer = ({
   return <img src={staticFile(src)} style={style} />;
 };
 
-export const CinematicScene = () => {
+const Scene: React.FC = () => {
   return (
     <AbsoluteFill
       style={{
@@ -75,40 +70,13 @@ export const CinematicScene = () => {
         transformStyle: 'preserve-3d',
       }}
     >
-      {/* BACKGROUND */}
-      <Layer
-        src="Cloud.mp4"
-        isVideo
-        depth={-700}
-        scale={2.8}
-      />
-
-      {/* MIDGROUND */}
-      <Layer
-        src="House.png"
-        depth={-250}
-        scale={1.6}
-      />
-
-      {/* FOREGROUND */}
-      <Layer
-        src="P5.png"
-        depth={250}
-        scale={1.15}
-        yOffset={40}
-      />
-
-      {/* EXTREME FOREGROUND */}
-      <Layer
-        src="Pole1.png"
-        depth={700}
-        scale={1.9}
-      />
-      <Layer
-        src="Pole1.png"
-        depth={900}
-        scale={2.2}
-      />
+      <Layer src="Cloud.mp4" isVideo depth={-700} scale={2.8} />
+      <Layer src="House.png" depth={-250} scale={1.6} />
+      <Layer src="P5.png" depth={250} scale={1.15} yOffset={40} />
+      <Layer src="Pole1.png" depth={700} scale={1.9} />
+      <Layer src="Pole1.png" depth={900} scale={2.2} />
     </AbsoluteFill>
   );
 };
+
+export default Scene;
