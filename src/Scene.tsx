@@ -1,4 +1,5 @@
-   import React from 'react';
+
+import React from 'react';
 import {
   AbsoluteFill,
   useCurrentFrame,
@@ -132,4 +133,4 @@ export const Scene: React.FC = () => {
   );
 };
 
-export default Scene;     
+export default Scene;
