@@ -1,129 +1,135 @@
-
-import React from 'react';
+   import React from 'react';
 import {
   AbsoluteFill,
   useCurrentFrame,
   interpolate,
   staticFile,
   Easing,
-  useVideoConfig,
 } from 'remotion';
 
-// --- CONFIGURATION ---
-const SETTINGS = {
-  TRANSITION_DURATION: 15, // Frames for the "Snap" in/out
-  STAY_DURATION: 25,       // Frames character stays in the center
-  OVERLAP: 10,             // How many frames the next character starts early
+/* ---------------- CAMERA NULL ---------------- */
+
+const useCameraRig = () => {
+  const frame = useCurrentFrame();
+
+  // MASTER CAMERA PROGRESS
+  const cam = interpolate(
+    frame,
+    [0, 40, 120, 160],
+    [0, 1, 1, 0],
+    {
+      extrapolateLeft: 'clamp',
+      extrapolateRight: 'clamp',
+      easing: Easing.bezier(0.2, 0.9, 0.2, 1),
+    }
+  );
+
+  const z = interpolate(cam, [0, 1], [-1200, 0]);
+  const x = interpolate(cam, [0, 1], [80, 0]);
+  const rotY = interpolate(cam, [0, 1], [-8, 0]);
+  const rotX = interpolate(cam, [0, 1], [4, 0]);
+
+  return { cam, z, x, rotX, rotY };
 };
 
-type LayerProps = {
+/* ---------------- IMAGE ACTOR ---------------- */
+
+type ActorProps = {
   src: string;
+  depth: number;
   index: number;
 };
 
-const CharacterLayer = ({ src, index }: LayerProps) => {
+const Actor: React.FC<ActorProps> = ({ src, depth, index }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
 
-  // Timing logic: Each character starts after the previous one finishes its "stay"
-  const stepDuration = SETTINGS.TRANSITION_DURATION + SETTINGS.STAY_DURATION;
-  const startTime = index * stepDuration;
-  
-  // Phase 1: Entry (Slide from right + Scale up)
-  // Phase 2: Active (Slight drift)
-  // Phase 3: Exit (Slide to left + Scale down)
-  
-  const entryEnd = startTime + SETTINGS.TRANSITION_DURATION;
-  const exitStart = entryEnd + SETTINGS.STAY_DURATION;
-  const exitEnd = exitStart + SETTINGS.TRANSITION_DURATION;
+  // slight organic motion
+  const breathe = Math.sin(frame * 0.04 + index) * 6;
 
-  // 1. Horizontal Motion (The "Null" Slide)
-  const translateX = interpolate(
-    frame,
-    [startTime, entryEnd, exitStart, exitEnd],
-    [1000, 0, -50, -1000], // Fast in, slow drift, fast out
-    {
-      extrapolateLeft: 'clamp',
-      extrapolateRight: 'clamp',
-      easing: Easing.bezier(0.16, 1, 0.3, 1), // "Quart Out" - very snappy like Alight Motion
-    }
-  );
-
-  // 2. Scale (The Depth Effect)
-  const scale = interpolate(
-    frame,
-    [startTime, entryEnd, exitStart, exitEnd],
-    [0.5, 1.1, 1.05, 0.4], // Starts small, pops large, settles, shrinks away
-    {
-      extrapolateLeft: 'clamp',
-      extrapolateRight: 'clamp',
-      easing: Easing.out(Easing.quad),
-    }
-  );
-
-  // 3. Opacity & Z-Index
-  const opacity = interpolate(
-    frame,
-    [startTime, startTime + 5, exitEnd - 5, exitEnd],
-    [0, 1, 1, 0],
-    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
-  );
-
-  // Ensure current character is on top of the previous one
-  const zIndex = frame > startTime ? index + 100 : index;
-
-  const style: React.CSSProperties = {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    opacity,
-    zIndex,
-    transform: `translate3d(${translateX}px, 0, 0) scale(${scale})`,
-    filter: `drop-shadow(0 30px 60px rgba(0,0,0,0.8))`,
-    transformOrigin: 'bottom center',
-  };
-
-  return (
-    <div style={style}>
-      <img
-        src={staticFile(src)}
-        style={{
-          height: '95%',
-          objectFit: 'contain',
-        }}
-        alt={`Character ${index}`}
-      />
-    </div>
-  );
-};
-
-const Scene: React.FC = () => {
-  // Automatically generate the array for P1.png through P12.png
-  const characters = Array.from({ length: 12 }, (_, i) => `P${i + 1}.png`);
+  // blur based on depth
+  const blur = interpolate(depth, [-200, 600], [0, 18]);
 
   return (
     <AbsoluteFill
       style={{
-        backgroundColor: '#000',
-        overflow: 'hidden',
-        perspective: '1500px', // Creates the 3D depth field
+        justifyContent: 'center',
+        alignItems: 'center',
+        transformStyle: 'preserve-3d',
+        transform: `
+          translate3d(${breathe}px, 0, ${depth}px)
+          rotateY(${depth * -0.01}deg)
+        `,
+        filter: `blur(${blur}px)`,
+        pointerEvents: 'none',
       }}
     >
-      {/* Dark background vignette */}
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        background: 'radial-gradient(circle, #222 0%, #000 80%)',
-      }} />
-
-      {characters.map((img, i) => (
-        <CharacterLayer key={img} src={img} index={i} />
-      ))}
+      <img
+        src={staticFile(src)}
+        style={{
+          height: '90%',
+          objectFit: 'contain',
+          filter: 'drop-shadow(0 40px 90px rgba(0,0,0,0.85))',
+        }}
+      />
     </AbsoluteFill>
   );
 };
 
-export default Scene;
+/* ---------------- SCENE ---------------- */
+
+export const Scene: React.FC = () => {
+  const frame = useCurrentFrame();
+  const camera = useCameraRig();
+
+  // IMAGES PLACED IN WORLD SPACE (NOT ANIMATED)
+  const images = Array.from({ length: 7 }, (_, i) => ({
+    src: `P${i + 1}.png`,
+    z: i * 420, // spacing in depth
+  }));
+
+  return (
+    <AbsoluteFill
+      style={{
+        background: '#000',
+        perspective: '1800px',
+        overflow: 'hidden',
+      }}
+    >
+      {/* VIGNETTE */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background:
+            'radial-gradient(circle at center, #222 0%, #000 75%)',
+          zIndex: 0,
+        }}
+      />
+
+      {/* CAMERA */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          transformStyle: 'preserve-3d',
+          transform: `
+            translate3d(${camera.x}px, 0, ${camera.z}px)
+            rotateX(${camera.rotX}deg)
+            rotateY(${camera.rotY}deg)
+          `,
+        }}
+      >
+        {images.map((img, i) => (
+          <Actor
+            key={img.src}
+            src={img.src}
+            depth={-img.z}
+            index={i}
+          />
+        ))}
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+export default Scene;     
