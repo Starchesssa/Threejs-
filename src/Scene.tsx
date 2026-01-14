@@ -1,84 +1,85 @@
-
-import React from 'react';
 import {
   AbsoluteFill,
+  Video,
+  Img,
   useCurrentFrame,
+  useVideoConfig,
   interpolate,
+  Easing,
   staticFile,
 } from 'remotion';
 
-const TOTAL_IMAGES = 12;
-const GAP = 20; // frames between images
-
-const ImageLayer = ({ src, index }: { src: string; index: number }) => {
+export const Scene = () => {
   const frame = useCurrentFrame();
+  const { fps, durationInFrames } = useVideoConfig();
 
-  // when this image starts
-  const start = index * GAP;
-  const localFrame = frame - start;
+  // ✅ REAL TIME IN SECONDS
+  const time = frame / fps;
+  const duration = durationInFrames / fps;
 
-  // zoom-out feeling (moving backward)
-  const scale = interpolate(
-    localFrame,
-    [0, 30, 90],
-    [1, 0.85, 0.6],
-    { extrapolateRight: 'clamp' }
-  );
+  const ease = Easing.inOut(Easing.cubic);
 
-  // move upward from bottom (brush reveal)
-  const translateY = interpolate(
-    localFrame,
-    [0, 20],
-    [200, 0],
-    { extrapolateRight: 'clamp' }
-  );
+  /* ---------------- BACKGROUND (Clouds) ---------------- */
 
-  // fade as it goes far
-  const opacity = interpolate(
-    localFrame,
-    [0, 20, 90],
-    [0, 1, 0.4],
-    { extrapolateRight: 'clamp' }
-  );
+  const bgX = interpolate(time, [0, duration], [0, 40], { easing: ease });
+  const bgScale = interpolate(time, [0, duration], [1.05, 1.15], { easing: ease });
+
+  /* ---------------- MIDGROUND (House) ---------------- */
+
+  const mgX = interpolate(time, [0, duration], [0, 120], { easing: ease });
+  const mgY = interpolate(time, [0, duration], [600, 520], { easing: ease });
+  const mgScale = interpolate(time, [0, duration], [0.85, 1.1], { easing: ease });
+
+  /* ---------------- FOREGROUND (P1) ---------------- */
+
+  const fgX = interpolate(time, [0, duration], [0, 220], { easing: ease });
+  const fgY = interpolate(time, [0, duration], [760, 420], { easing: ease });
+  const fgScale = interpolate(time, [0, duration], [1.0, 1.45], { easing: ease });
 
   return (
-    <AbsoluteFill
-      style={{
-        justifyContent: 'flex-end', // bottom brush
-        alignItems: 'center',
-        transform: `
-          translateY(${translateY}px)
-          scale(${scale})
-        `,
-        opacity,
-      }}
-    >
-      <img
-        src={staticFile(src)}
+    <AbsoluteFill style={{ perspective: 1000 }}>
+
+      {/* 🌥 BACKGROUND */}
+      <AbsoluteFill
         style={{
-          height: '70%', // NOT full screen
-          objectFit: 'contain',
+          transform: `
+            translateX(${bgX}px)
+            translateZ(-800px)
+            scale(${bgScale})
+          `,
         }}
-      />
+      >
+        <Video src={staticFile('Cloud.mp4')} />
+      </AbsoluteFill>
+
+      {/* 🏠 MIDGROUND */}
+      <AbsoluteFill
+        style={{
+          transform: `
+            translateX(${mgX}px)
+            translateY(${mgY}px)
+            translateZ(-300px)
+            scale(${mgScale})
+          `,
+        }}
+      >
+        <Img src={staticFile('House.png')} />
+      </AbsoluteFill>
+
+      {/* 👤 FOREGROUND */}
+      <AbsoluteFill
+        style={{
+          transform: `
+            translateX(${fgX}px)
+            translateY(${fgY}px)
+            translateZ(-80px)
+            scale(${fgScale})
+          `,
+        }}
+      >
+        <Img src={staticFile('P1.png')} />
+      </AbsoluteFill>
+
     </AbsoluteFill>
   );
 };
-
-export const Scene: React.FC = () => {
-  const images = Array.from({ length: TOTAL_IMAGES }, (_, i) => `P${i + 1}.png`);
-
-  return (
-    <AbsoluteFill
-      style={{
-        backgroundColor: '#000',
-        overflow: 'hidden',
-      }}
-    >
-      {images.map((img, i) => (
-        <ImageLayer key={img} src={img} index={i} />
-      ))}
-    </AbsoluteFill>
-  );
-};
-
-export default Scene;
