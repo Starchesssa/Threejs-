@@ -1,3 +1,4 @@
+
 import {
   AbsoluteFill,
   Video,
@@ -11,33 +12,76 @@ import {
 
 export const Scene = () => {
   const frame = useCurrentFrame();
-  const { fps, durationInFrames } = useVideoConfig();
+  const { fps } = useVideoConfig();
 
-  // ✅ REAL TIME IN SECONDS
+  // 🎯 TIME IN SECONDS
   const time = frame / fps;
-  const duration = durationInFrames / fps;
 
-  const ease = Easing.inOut(Easing.cubic);
+  // 🎥 CINEMATIC EASE
+  const ease = Easing.bezier(0.4, 0.0, 0.2, 1);
 
-  /* ---------------- BACKGROUND (Clouds) ---------------- */
+  /* =====================================================
+     🌥 BACKGROUND – CLOUD VIDEO
+     ===================================================== */
 
-  const bgX = interpolate(time, [0, duration], [0, 40], { easing: ease });
-  const bgScale = interpolate(time, [0, duration], [1.05, 1.15], { easing: ease });
+  const bgScale = interpolate(
+    time,
+    [0, 15],
+    [1.2, 1.0],
+    { easing: ease }
+  );
 
-  /* ---------------- MIDGROUND (House) ---------------- */
+  const bgX = interpolate(
+    time,
+    [0, 15],
+    [0, 60],
+    { easing: ease }
+  );
 
-  const mgX = interpolate(time, [0, duration], [0, 120], { easing: ease });
-  const mgY = interpolate(time, [0, duration], [600, 520], { easing: ease });
-  const mgScale = interpolate(time, [0, duration], [0.85, 1.1], { easing: ease });
+  /* =====================================================
+     🏠 MIDGROUND – HOUSE (ENTERS BIG → SHRINKS)
+     ===================================================== */
 
-  /* ---------------- FOREGROUND (P1) ---------------- */
+  const mgStart = 3;
+  const mgEnd = 8;
 
-  const fgX = interpolate(time, [0, duration], [0, 220], { easing: ease });
-  const fgY = interpolate(time, [0, duration], [760, 420], { easing: ease });
-  const fgScale = interpolate(time, [0, duration], [1.0, 1.45], { easing: ease });
+  const mgY = interpolate(
+    time,
+    [mgStart, mgEnd],
+    [900, 520],
+    { easing: ease, extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
+  );
+
+  const mgScale = interpolate(
+    time,
+    [mgStart, mgEnd],
+    [1.6, 1.0],
+    { easing: ease, extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
+  );
+
+  /* =====================================================
+     👤 FOREGROUND – PERSON (VERY BIG → NORMAL)
+     ===================================================== */
+
+  const fgStart = 7;
+  const fgEnd = 12;
+
+  const fgY = interpolate(
+    time,
+    [fgStart, fgEnd],
+    [1200, 420],
+    { easing: ease, extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
+  );
+
+  const fgScale = interpolate(
+    time,
+    [fgStart, fgEnd],
+    [2.4, 1.0],
+    { easing: ease, extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
+  );
 
   return (
-    <AbsoluteFill style={{ perspective: 1000 }}>
+    <AbsoluteFill style={{ perspective: 1200 }}>
 
       {/* 🌥 BACKGROUND */}
       <AbsoluteFill
@@ -53,32 +97,34 @@ export const Scene = () => {
       </AbsoluteFill>
 
       {/* 🏠 MIDGROUND */}
-      <AbsoluteFill
-        style={{
-          transform: `
-            translateX(${mgX}px)
-            translateY(${mgY}px)
-            translateZ(-300px)
-            scale(${mgScale})
-          `,
-        }}
-      >
-        <Img src={staticFile('House.png')} />
-      </AbsoluteFill>
+      {time >= mgStart && (
+        <AbsoluteFill
+          style={{
+            transform: `
+              translateY(${mgY}px)
+              translateZ(-300px)
+              scale(${mgScale})
+            `,
+          }}
+        >
+          <Img src={staticFile('House.png')} />
+        </AbsoluteFill>
+      )}
 
       {/* 👤 FOREGROUND */}
-      <AbsoluteFill
-        style={{
-          transform: `
-            translateX(${fgX}px)
-            translateY(${fgY}px)
-            translateZ(-80px)
-            scale(${fgScale})
-          `,
-        }}
-      >
-        <Img src={staticFile('P1.png')} />
-      </AbsoluteFill>
+      {time >= fgStart && (
+        <AbsoluteFill
+          style={{
+            transform: `
+              translateY(${fgY}px)
+              translateZ(-80px)
+              scale(${fgScale})
+            `,
+          }}
+        >
+          <Img src={staticFile('P10.png')} />
+        </AbsoluteFill>
+      )}
 
     </AbsoluteFill>
   );
