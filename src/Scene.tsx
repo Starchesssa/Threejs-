@@ -1,4 +1,4 @@
-
+import React from 'react';
 import {
   AbsoluteFill,
   Video,
@@ -10,86 +10,65 @@ import {
   staticFile,
 } from 'remotion';
 
-export const Scene = () => {
+const Scene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // 🎯 TIME IN SECONDS
-  const time = frame / fps;
+  // ⏱ time in seconds
+  const t = frame / fps;
 
-  // 🎥 CINEMATIC EASE
-  const ease = Easing.bezier(0.4, 0.0, 0.2, 1);
+  const ease = Easing.inOut(Easing.cubic);
 
-  /* =====================================================
-     🌥 BACKGROUND – CLOUD VIDEO
-     ===================================================== */
-
+  /* ---------------- BACKGROUND (CLOUDS) ---------------- */
+  // already visible, slow zoom-in
   const bgScale = interpolate(
-    time,
-    [0, 15],
-    [1.2, 1.0],
+    t,
+    [0, 12],
+    [1.4, 1.1],
     { easing: ease }
   );
 
-  const bgX = interpolate(
-    time,
-    [0, 15],
-    [0, 60],
-    { easing: ease }
-  );
-
-  /* =====================================================
-     🏠 MIDGROUND – HOUSE (ENTERS BIG → SHRINKS)
-     ===================================================== */
-
-  const mgStart = 3;
-  const mgEnd = 8;
-
+  /* ---------------- MIDGROUND (HOUSE) ---------------- */
+  // appears later, comes from bottom big → up smaller
   const mgY = interpolate(
-    time,
-    [mgStart, mgEnd],
+    t,
+    [3, 8],
     [900, 520],
-    { easing: ease, extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
+    { easing: ease }
   );
 
   const mgScale = interpolate(
-    time,
-    [mgStart, mgEnd],
-    [1.6, 1.0],
-    { easing: ease, extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
+    t,
+    [3, 8],
+    [1.8, 1.05],
+    { easing: ease }
   );
 
-  /* =====================================================
-     👤 FOREGROUND – PERSON (VERY BIG → NORMAL)
-     ===================================================== */
-
-  const fgStart = 7;
-  const fgEnd = 12;
-
+  /* ---------------- FOREGROUND (PERSON) ---------------- */
+  // appears last, even bigger, more depth
   const fgY = interpolate(
-    time,
-    [fgStart, fgEnd],
+    t,
+    [7, 12],
     [1200, 420],
-    { easing: ease, extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
+    { easing: ease }
   );
 
   const fgScale = interpolate(
-    time,
-    [fgStart, fgEnd],
-    [2.4, 1.0],
-    { easing: ease, extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
+    t,
+    [7, 12],
+    [2.6, 1.0],
+    { easing: ease }
   );
 
   return (
-    <AbsoluteFill style={{ perspective: 1200 }}>
+    <AbsoluteFill style={{ backgroundColor: 'black', perspective: 1000 }}>
 
       {/* 🌥 BACKGROUND */}
       <AbsoluteFill
         style={{
           transform: `
-            translateX(${bgX}px)
-            translateZ(-800px)
             scale(${bgScale})
+            translateZ(-800px)
           `,
         }}
       >
@@ -97,35 +76,33 @@ export const Scene = () => {
       </AbsoluteFill>
 
       {/* 🏠 MIDGROUND */}
-      {time >= mgStart && (
-        <AbsoluteFill
-          style={{
-            transform: `
-              translateY(${mgY}px)
-              translateZ(-300px)
-              scale(${mgScale})
-            `,
-          }}
-        >
-          <Img src={staticFile('House.png')} />
-        </AbsoluteFill>
-      )}
+      <AbsoluteFill
+        style={{
+          transform: `
+            translateY(${mgY}px)
+            scale(${mgScale})
+            translateZ(-300px)
+          `,
+        }}
+      >
+        <Img src={staticFile('House.png')} />
+      </AbsoluteFill>
 
       {/* 👤 FOREGROUND */}
-      {time >= fgStart && (
-        <AbsoluteFill
-          style={{
-            transform: `
-              translateY(${fgY}px)
-              translateZ(-80px)
-              scale(${fgScale})
-            `,
-          }}
-        >
-          <Img src={staticFile('P10.png')} />
-        </AbsoluteFill>
-      )}
+      <AbsoluteFill
+        style={{
+          transform: `
+            translateY(${fgY}px)
+            scale(${fgScale})
+            translateZ(-80px)
+          `,
+        }}
+      >
+        <Img src={staticFile('P10.png')} />
+      </AbsoluteFill>
 
     </AbsoluteFill>
   );
 };
+
+export default Scene;
