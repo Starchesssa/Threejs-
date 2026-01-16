@@ -19,57 +19,42 @@ const Scene: React.FC = () => {
   const duration = durationInFrames / fps;
   const ease = Easing.inOut(Easing.cubic);
 
-  /* ---------------- PROGRESS ---------------- */
-  const p = interpolate(t, [0, duration], [0, 1], {
-    easing: ease,
-  });
+  const p = interpolate(t, [0, duration], [0, 1], { easing: ease });
 
-  /* ---------------- CLOUDS (INFINITE SKY) ---------------- */
+  /* ---------------- CLOUDS (TOP MATTE) ---------------- */
   const cloudScale = interpolate(p, [0, 0.5], [3.2, 1.6]);
-  const cloudY = interpolate(p, [0, 0.5], [-300, 0]);
+  const cloudY = interpolate(p, [0, 0.5], [0, -700]);
 
-  /* ---------------- HOUSE (MIDGROUND REVEAL) ---------------- */
-  const houseReveal = interpolate(p, [0.25, 0.75], [0, 1], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
+  /* ---------------- HOUSE (SECOND MATTE) ---------------- */
+  const houseScale = interpolate(p, [0.3, 0.8], [3.0, 0.9]);
+  const houseY = interpolate(p, [0.3, 0.8], [800, 200]);
 
-  const houseScale = interpolate(houseReveal, [0, 1], [2.8, 0.9]);
-  const houseY = interpolate(houseReveal, [0, 1], [600, 200]);
-
-  /* ---------------- PERSON (FOREGROUND REVEAL) ---------------- */
-  const personReveal = interpolate(p, [0.5, 1], [0, 1], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
-
-  const personScale = interpolate(personReveal, [0, 1], [3.5, 0.55]);
-  const personY = interpolate(personReveal, [0, 1], [900, 420]);
+  /* ---------------- PERSON (FINAL REVEAL) ---------------- */
+  const personScale = interpolate(p, [0.6, 1], [3.5, 0.55]);
+  const personY = interpolate(p, [0.6, 1], [1100, 420]);
 
   return (
     <AbsoluteFill
       style={{
         backgroundColor: 'black',
-        perspective: 1200,
         overflow: 'hidden',
       }}
     >
-      {/* 🌥 CLOUDS — ALWAYS BACKGROUND */}
+      {/* 👤 PERSON (DEEPEST) */}
       <AbsoluteFill
         style={{
           transform: `
-            translateY(${cloudY}px)
-            scale(${cloudScale})
+            translateY(${personY}px)
+            scale(${personScale})
           `,
         }}
       >
-        <Video src={staticFile('Cloud.mp4')} />
+        <Img src={staticFile('P10.png')} />
       </AbsoluteFill>
 
-      {/* 🏠 HOUSE — REVEALED BY CLOUD DIMINISH */}
+      {/* 🏠 HOUSE (MIDDLE MASK) */}
       <AbsoluteFill
         style={{
-          opacity: houseReveal,
           transform: `
             translateY(${houseY}px)
             scale(${houseScale})
@@ -79,17 +64,16 @@ const Scene: React.FC = () => {
         <Img src={staticFile('House.png')} />
       </AbsoluteFill>
 
-      {/* 👤 PERSON — REVEALED BY HOUSE DIMINISH */}
+      {/* 🌥 CLOUDS (TOP MASK — ALWAYS ON TOP) */}
       <AbsoluteFill
         style={{
-          opacity: personReveal,
           transform: `
-            translateY(${personY}px)
-            scale(${personScale})
+            translateY(${cloudY}px)
+            scale(${cloudScale})
           `,
         }}
       >
-        <Img src={staticFile('P10.png')} />
+        <Video src={staticFile('Cloud.mp4')} />
       </AbsoluteFill>
     </AbsoluteFill>
   );
