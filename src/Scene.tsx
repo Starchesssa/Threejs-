@@ -13,29 +13,38 @@ import {
 
 const Scene: React.FC = () => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, durationInFrames } = useVideoConfig();
 
   const t = frame / fps;
+  const duration = durationInFrames / fps;
   const ease = Easing.inOut(Easing.cubic);
 
-  /* ---------------- CAMERA ---------------- */
-  // Camera moves BACKWARD through the scene
-  const cameraZ = interpolate(
-    t,
-    [0, 12],
-    [-200, -2200],
-    { easing: ease }
-  );
+  /* ---------------- PROGRESS ---------------- */
+  const p = interpolate(t, [0, duration], [0, 1], {
+    easing: ease,
+  });
 
-  /* ---------------- WORLD POSITIONS ---------------- */
-  const CLOUD_Z = -1600;
-  const HOUSE_Z = -900;
-  const PERSON_Z = -300;
+  /* ---------------- CLOUDS (INFINITE SKY) ---------------- */
+  const cloudScale = interpolate(p, [0, 0.5], [3.2, 1.6]);
+  const cloudY = interpolate(p, [0, 0.5], [-300, 0]);
 
-  /* ---------------- NORMALIZED SIZES ---------------- */
-  const CLOUD_SCALE = 1.2;  // sky is huge
-  const HOUSE_SCALE = 0.9;  // buildings smaller
-  const PERSON_SCALE = 0.55; // humans much smaller
+  /* ---------------- HOUSE (MIDGROUND REVEAL) ---------------- */
+  const houseReveal = interpolate(p, [0.25, 0.75], [0, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
+
+  const houseScale = interpolate(houseReveal, [0, 1], [2.8, 0.9]);
+  const houseY = interpolate(houseReveal, [0, 1], [600, 200]);
+
+  /* ---------------- PERSON (FOREGROUND REVEAL) ---------------- */
+  const personReveal = interpolate(p, [0.5, 1], [0, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
+
+  const personScale = interpolate(personReveal, [0, 1], [3.5, 0.55]);
+  const personY = interpolate(personReveal, [0, 1], [900, 420]);
 
   return (
     <AbsoluteFill
@@ -45,55 +54,43 @@ const Scene: React.FC = () => {
         overflow: 'hidden',
       }}
     >
-      {/* CAMERA */}
-      <div
+      {/* 🌥 CLOUDS — ALWAYS BACKGROUND */}
+      <AbsoluteFill
         style={{
-          position: 'absolute',
-          inset: 0,
-          transformStyle: 'preserve-3d',
-          transform: `translateZ(${cameraZ}px)`,
+          transform: `
+            translateY(${cloudY}px)
+            scale(${cloudScale})
+          `,
         }}
       >
+        <Video src={staticFile('Cloud.mp4')} />
+      </AbsoluteFill>
 
-        {/* 🌥 CLOUDS (BACKGROUND) */}
-        <AbsoluteFill
-          style={{
-            transform: `
-              translateZ(${CLOUD_Z}px)
-              scale(${CLOUD_SCALE})
-            `,
-          }}
-        >
-          <Video src={staticFile('Cloud.mp4')} />
-        </AbsoluteFill>
+      {/* 🏠 HOUSE — REVEALED BY CLOUD DIMINISH */}
+      <AbsoluteFill
+        style={{
+          opacity: houseReveal,
+          transform: `
+            translateY(${houseY}px)
+            scale(${houseScale})
+          `,
+        }}
+      >
+        <Img src={staticFile('House.png')} />
+      </AbsoluteFill>
 
-        {/* 🏠 HOUSE (MIDGROUND) */}
-        <AbsoluteFill
-          style={{
-            transform: `
-              translateY(200px)
-              translateZ(${HOUSE_Z}px)
-              scale(${HOUSE_SCALE})
-            `,
-          }}
-        >
-          <Img src={staticFile('House.png')} />
-        </AbsoluteFill>
-
-        {/* 👤 PERSON (FOREGROUND) */}
-        <AbsoluteFill
-          style={{
-            transform: `
-              translateY(420px)
-              translateZ(${PERSON_Z}px)
-              scale(${PERSON_SCALE})
-            `,
-          }}
-        >
-          <Img src={staticFile('P10.png')} />
-        </AbsoluteFill>
-
-      </div>
+      {/* 👤 PERSON — REVEALED BY HOUSE DIMINISH */}
+      <AbsoluteFill
+        style={{
+          opacity: personReveal,
+          transform: `
+            translateY(${personY}px)
+            scale(${personScale})
+          `,
+        }}
+      >
+        <Img src={staticFile('P10.png')} />
+      </AbsoluteFill>
     </AbsoluteFill>
   );
 };
