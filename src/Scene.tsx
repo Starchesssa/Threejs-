@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   AbsoluteFill,
@@ -14,93 +15,85 @@ const Scene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // ⏱ time in seconds
   const t = frame / fps;
-
   const ease = Easing.inOut(Easing.cubic);
 
-  /* ---------------- BACKGROUND (CLOUDS) ---------------- */
-  // already visible, slow zoom-in
-  const bgScale = interpolate(
+  /* ---------------- CAMERA ---------------- */
+  // Camera moves BACKWARD through the scene
+  const cameraZ = interpolate(
     t,
     [0, 12],
-    [1.4, 1.1],
+    [-200, -2200],
     { easing: ease }
   );
 
-  /* ---------------- MIDGROUND (HOUSE) ---------------- */
-  // appears later, comes from bottom big → up smaller
-  const mgY = interpolate(
-    t,
-    [3, 8],
-    [900, 520],
-    { easing: ease }
-  );
+  /* ---------------- WORLD POSITIONS ---------------- */
+  const CLOUD_Z = -1600;
+  const HOUSE_Z = -900;
+  const PERSON_Z = -300;
 
-  const mgScale = interpolate(
-    t,
-    [3, 8],
-    [1.8, 1.05],
-    { easing: ease }
-  );
-
-  /* ---------------- FOREGROUND (PERSON) ---------------- */
-  // appears last, even bigger, more depth
-  const fgY = interpolate(
-    t,
-    [7, 12],
-    [1200, 420],
-    { easing: ease }
-  );
-
-  const fgScale = interpolate(
-    t,
-    [7, 12],
-    [2.6, 1.0],
-    { easing: ease }
-  );
+  /* ---------------- NORMALIZED SIZES ---------------- */
+  const CLOUD_SCALE = 1.2;  // sky is huge
+  const HOUSE_SCALE = 0.9;  // buildings smaller
+  const PERSON_SCALE = 0.55; // humans much smaller
 
   return (
-    <AbsoluteFill style={{ backgroundColor: 'black', perspective: 1000 }}>
-
-      {/* 🌥 BACKGROUND */}
-      <AbsoluteFill
+    <AbsoluteFill
+      style={{
+        backgroundColor: 'black',
+        perspective: 1200,
+        overflow: 'hidden',
+      }}
+    >
+      {/* CAMERA */}
+      <div
         style={{
-          transform: `
-            scale(${bgScale})
-            translateZ(-800px)
-          `,
+          position: 'absolute',
+          inset: 0,
+          transformStyle: 'preserve-3d',
+          transform: `translateZ(${cameraZ}px)`,
         }}
       >
-        <Video src={staticFile('Cloud.mp4')} />
-      </AbsoluteFill>
 
-      {/* 🏠 MIDGROUND */}
-      <AbsoluteFill
-        style={{
-          transform: `
-            translateY(${mgY}px)
-            scale(${mgScale})
-            translateZ(-300px)
-          `,
-        }}
-      >
-        <Img src={staticFile('House.png')} />
-      </AbsoluteFill>
+        {/* 🌥 CLOUDS (BACKGROUND) */}
+        <AbsoluteFill
+          style={{
+            transform: `
+              translateZ(${CLOUD_Z}px)
+              scale(${CLOUD_SCALE})
+            `,
+          }}
+        >
+          <Video src={staticFile('Cloud.mp4')} />
+        </AbsoluteFill>
 
-      {/* 👤 FOREGROUND */}
-      <AbsoluteFill
-        style={{
-          transform: `
-            translateY(${fgY}px)
-            scale(${fgScale})
-            translateZ(-80px)
-          `,
-        }}
-      >
-        <Img src={staticFile('P10.png')} />
-      </AbsoluteFill>
+        {/* 🏠 HOUSE (MIDGROUND) */}
+        <AbsoluteFill
+          style={{
+            transform: `
+              translateY(200px)
+              translateZ(${HOUSE_Z}px)
+              scale(${HOUSE_SCALE})
+            `,
+          }}
+        >
+          <Img src={staticFile('House.png')} />
+        </AbsoluteFill>
 
+        {/* 👤 PERSON (FOREGROUND) */}
+        <AbsoluteFill
+          style={{
+            transform: `
+              translateY(420px)
+              translateZ(${PERSON_Z}px)
+              scale(${PERSON_SCALE})
+            `,
+          }}
+        >
+          <Img src={staticFile('P10.png')} />
+        </AbsoluteFill>
+
+      </div>
     </AbsoluteFill>
   );
 };
