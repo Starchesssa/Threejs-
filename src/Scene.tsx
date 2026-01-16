@@ -21,17 +21,17 @@ const Scene: React.FC = () => {
 
   const p = interpolate(t, [0, duration], [0, 1], { easing: ease });
 
-  /* ---------------- CLOUDS (TOP MATTE) ---------------- */
-  const cloudScale = interpolate(p, [0, 0.5], [3.2, 1.6]);
-  const cloudY = interpolate(p, [0, 0.5], [0, -700]);
+  /* 🌥 CLOUDS — BACKGROUND */
+  const cloudScale = interpolate(p, [0, 0.4], [3.5, 1.6]);
+  const cloudY = interpolate(p, [0, 0.4], [0, -600]);
 
-  /* ---------------- HOUSE (SECOND MATTE) ---------------- */
-  const houseScale = interpolate(p, [0.3, 0.8], [3.0, 0.9]);
-  const houseY = interpolate(p, [0.3, 0.8], [800, 200]);
+  /* 🏠 HOUSE — MIDGROUND */
+  const houseScale = interpolate(p, [0.25, 0.75], [3.0, 0.9]);
+  const houseY = interpolate(p, [0.25, 0.75], [900, 220]);
 
-  /* ---------------- PERSON (FINAL REVEAL) ---------------- */
-  const personScale = interpolate(p, [0.6, 1], [3.5, 0.55]);
-  const personY = interpolate(p, [0.6, 1], [1100, 420]);
+  /* 👤 PERSON — FOREGROUND */
+  const personScale = interpolate(p, [0.55, 1], [3.8, 0.55]);
+  const personY = interpolate(p, [0.55, 1], [1200, 420]);
 
   return (
     <AbsoluteFill
@@ -40,19 +40,19 @@ const Scene: React.FC = () => {
         overflow: 'hidden',
       }}
     >
-      {/* 👤 PERSON (DEEPEST) */}
+      {/* 🌥 CLOUDS (BACKGROUND) */}
       <AbsoluteFill
         style={{
           transform: `
-            translateY(${personY}px)
-            scale(${personScale})
+            translateY(${cloudY}px)
+            scale(${cloudScale})
           `,
         }}
       >
-        <Img src={staticFile('P10.png')} />
+        <Video src={staticFile('Cloud.mp4')} />
       </AbsoluteFill>
 
-      {/* 🏠 HOUSE (MIDDLE MASK) */}
+      {/* 🏠 HOUSE (OVER CLOUDS) */}
       <AbsoluteFill
         style={{
           transform: `
@@ -64,16 +64,16 @@ const Scene: React.FC = () => {
         <Img src={staticFile('House.png')} />
       </AbsoluteFill>
 
-      {/* 🌥 CLOUDS (TOP MASK — ALWAYS ON TOP) */}
+      {/* 👤 PERSON (OVER HOUSE) */}
       <AbsoluteFill
         style={{
           transform: `
-            translateY(${cloudY}px)
-            scale(${cloudScale})
+            translateY(${personY}px)
+            scale(${personScale})
           `,
         }}
       >
-        <Video src={staticFile('Cloud.mp4')} />
+        <Img src={staticFile('P10.png')} />
       </AbsoluteFill>
     </AbsoluteFill>
   );
