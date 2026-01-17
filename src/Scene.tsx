@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   AbsoluteFill,
@@ -15,66 +14,74 @@ const Scene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
 
-  const t = frame / fps;
-  const duration = durationInFrames / fps;
-  const ease = Easing.inOut(Easing.cubic);
+  // 1. Unified Progress: Everything happens over the whole duration
+  const progress = frame / durationInFrames;
+  
+  // 2. Cinematic Easing: "Out" easing makes it feel like it's slowing down into place
+  const ease = Easing.out(Easing.quad);
+  const p = interpolate(progress, [0, 1], [0, 1], { easing: ease });
 
-  const p = interpolate(t, [0, duration], [0, 1], { easing: ease });
+  /**
+   * PARALLAX LOGIC:
+   * Foreground (Person) = Massive scale change + Massive Y movement
+   * Midground (House)   = Moderate scale change + Moderate Y movement
+   * Background (Clouds) = Tiny scale change + Tiny Y movement
+   */
 
-  /* 🌥 CLOUDS — BACKGROUND */
-  const cloudScale = interpolate(p, [0, 0.4], [3.5, 1.6]);
-  const cloudY = interpolate(p, [0, 0.4], [0, -600]);
+  /* 🌥 CLOUDS — BACKGROUND (Moves the least) */
+  const cloudScale = interpolate(p, [0, 1], [1.3, 1.0]);
+  const cloudY = interpolate(p, [0, 1], [0, 50]);
 
-  /* 🏠 HOUSE — MIDGROUND */
-  const houseScale = interpolate(p, [0.25, 0.75], [3.0, 0.9]);
-  const houseY = interpolate(p, [0.25, 0.75], [900, 220]);
+  /* 🏠 HOUSE — MIDGROUND (Moves moderately) */
+  const houseScale = interpolate(p, [0, 1], [3.5, 1.0]);
+  const houseY = interpolate(p, [0, 1], [-200, 150]);
 
-  /* 👤 PERSON — FOREGROUND */
-  const personScale = interpolate(p, [0.55, 1], [3.8, 0.55]);
-  const personY = interpolate(p, [0.55, 1], [1200, 420]);
+  /* 👤 PERSON — FOREGROUND (Moves the most) */
+  // We start at scale 12 so the person "fills" the screen at the start
+  const personScale = interpolate(p, [0, 1], [12, 0.7]);
+  const personY = interpolate(p, [0, 1], [-800, 450]);
 
   return (
-    <AbsoluteFill
-      style={{
-        backgroundColor: 'black',
-        overflow: 'hidden',
-      }}
-    >
-      {/* 🌥 CLOUDS (BACKGROUND) */}
+    <AbsoluteFill style={{ backgroundColor: 'black', overflow: 'hidden' }}>
+      
+      {/* 🌥 CLOUDS */}
       <AbsoluteFill
         style={{
-          transform: `
-            translateY(${cloudY}px)
-            scale(${cloudScale})
-          `,
+          transform: `translateY(${cloudY}px) scale(${cloudScale})`,
         }}
       >
-        <Video src={staticFile('Cloud.mp4')} />
+        <Video 
+          src={staticFile('Cloud.mp4')} 
+          startFrom={0} 
+          muted 
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
       </AbsoluteFill>
 
-      {/* 🏠 HOUSE (OVER CLOUDS) */}
+      {/* 🏠 HOUSE */}
       <AbsoluteFill
         style={{
-          transform: `
-            translateY(${houseY}px)
-            scale(${houseScale})
-          `,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transform: `translateY(${houseY}px) scale(${houseScale})`,
         }}
       >
-        <Img src={staticFile('House.png')} />
+        <Img src={staticFile('House.png')} style={{ height: '600px' }} />
       </AbsoluteFill>
 
-      {/* 👤 PERSON (OVER HOUSE) */}
+      {/* 👤 PERSON */}
       <AbsoluteFill
         style={{
-          transform: `
-            translateY(${personY}px)
-            scale(${personScale})
-          `,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transform: `translateY(${personY}px) scale(${personScale})`,
         }}
       >
-        <Img src={staticFile('P10.png')} />
+        <Img src={staticFile('P10.png')} style={{ height: '800px' }} />
       </AbsoluteFill>
+
     </AbsoluteFill>
   );
 };
