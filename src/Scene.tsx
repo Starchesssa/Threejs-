@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   AbsoluteFill,
@@ -12,76 +13,75 @@ import {
 
 const Scene: React.FC = () => {
   const frame = useCurrentFrame();
-  const { fps, durationInFrames } = useVideoConfig();
+  const { fps } = useVideoConfig();
 
-  // 1. Unified Progress: Everything happens over the whole duration
-  const progress = frame / durationInFrames;
-  
-  // 2. Cinematic Easing: "Out" easing makes it feel like it's slowing down into place
-  const ease = Easing.out(Easing.quad);
-  const p = interpolate(progress, [0, 1], [0, 1], { easing: ease });
+  const t = frame / fps;
+  const ease = Easing.inOut(Easing.cubic);
 
-  /**
-   * PARALLAX LOGIC:
-   * Foreground (Person) = Massive scale change + Massive Y movement
-   * Midground (House)   = Moderate scale change + Moderate Y movement
-   * Background (Clouds) = Tiny scale change + Tiny Y movement
-   */
+  /* ---------------- CAMERA ---------------- */
+  // Camera moves FORWARD toward the subject
+  const cameraZ = interpolate(
+    t,
+    [0, 6],
+    [300, -300],
+    { easing: ease }
+  );
 
-  /* 🌥 CLOUDS — BACKGROUND (Moves the least) */
-  const cloudScale = interpolate(p, [0, 1], [1.3, 1.0]);
-  const cloudY = interpolate(p, [0, 1], [0, 50]);
-
-  /* 🏠 HOUSE — MIDGROUND (Moves moderately) */
-  const houseScale = interpolate(p, [0, 1], [3.5, 1.0]);
-  const houseY = interpolate(p, [0, 1], [-200, 150]);
-
-  /* 👤 PERSON — FOREGROUND (Moves the most) */
-  // We start at scale 12 so the person "fills" the screen at the start
-  const personScale = interpolate(p, [0, 1], [12, 0.7]);
-  const personY = interpolate(p, [0, 1], [-800, 450]);
+  /* ---------------- WORLD POSITIONS ---------------- */
+  const CLOUD_Z = -600;   // far background
+  const HOUSE_Z = -350;   // midground
+  const PERSON_Z = -120;  // foreground (very close)
 
   return (
-    <AbsoluteFill style={{ backgroundColor: 'black', overflow: 'hidden' }}>
-      
-      {/* 🌥 CLOUDS */}
-      <AbsoluteFill
+    <AbsoluteFill
+      style={{
+        backgroundColor: 'black',
+        perspective: 500, // STRONG perspective = close feel
+        overflow: 'hidden',
+      }}
+    >
+      {/* CAMERA */}
+      <div
         style={{
-          transform: `translateY(${cloudY}px) scale(${cloudScale})`,
+          position: 'absolute',
+          inset: 0,
+          transformStyle: 'preserve-3d',
+          transform: `translateZ(${cameraZ}px)`,
         }}
       >
-        <Video 
-          src={staticFile('Cloud.mp4')} 
-          startFrom={0} 
-          muted 
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        />
-      </AbsoluteFill>
+        {/* 🌥 CLOUDS (BACKGROUND) */}
+        <AbsoluteFill
+          style={{
+            transform: `translateZ(${CLOUD_Z}px) scale(1.05)`,
+          }}
+        >
+          <Video src={staticFile('Cloud.mp4')} />
+        </AbsoluteFill>
 
-      {/* 🏠 HOUSE */}
-      <AbsoluteFill
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transform: `translateY(${houseY}px) scale(${houseScale})`,
-        }}
-      >
-        <Img src={staticFile('House.png')} style={{ height: '600px' }} />
-      </AbsoluteFill>
+        {/* 🏠 HOUSE (MIDGROUND) */}
+        <AbsoluteFill
+          style={{
+            transform: `
+              translateY(200px)
+              translateZ(${HOUSE_Z}px)
+            `,
+          }}
+        >
+          <Img src={staticFile('House.png')} />
+        </AbsoluteFill>
 
-      {/* 👤 PERSON */}
-      <AbsoluteFill
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transform: `translateY(${personY}px) scale(${personScale})`,
-        }}
-      >
-        <Img src={staticFile('P10.png')} style={{ height: '800px' }} />
-      </AbsoluteFill>
-
+        {/* 👤 PERSON (FOREGROUND) */}
+        <AbsoluteFill
+          style={{
+            transform: `
+              translateY(420px)
+              translateZ(${PERSON_Z}px)
+            `,
+          }}
+        >
+          <Img src={staticFile('P10.png')} />
+        </AbsoluteFill>
+      </div>
     </AbsoluteFill>
   );
 };
