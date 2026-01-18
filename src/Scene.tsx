@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   AbsoluteFill,
@@ -11,111 +10,144 @@ import {
   staticFile,
 } from 'remotion';
 
-type KeyframeLayer = {
-  start: number;      // seconds when animation starts
-  end: number;        // seconds when animation ends
-  scaleFrom: number;  // starting scale
-  scaleTo: number;    // ending scale
-  yFrom: number;      // starting Y position
-  yTo: number;        // ending Y position
-  minScale?: number;  // optional limit for tweaking
-  maxScale?: number;  // optional limit for tweaking
-};
-
-const ease = Easing.inOut(Easing.cubic);
-
 const Scene: React.FC = () => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const t = frame / fps;
+  const { fps, durationInFrames } = useVideoConfig();
 
-  const layers: { [key: string]: KeyframeLayer & { type: 'img' | 'video'; src: string; height?: number } } = {
-    clouds: {
-      type: 'video',
-      src: 'Cloud.mp4',
-      start: 0,
-      end: 12,
-      scaleFrom: 2.4,
-      scaleTo: 1.2,
-      yFrom: -300,
-      yTo: 0,
-      minScale: 1.0,
-      maxScale: 2.4,
-    },
-    house: {
-      type: 'img',
-      src: 'House.png',
-      height: 900,
-      start: 3,
-      end: 12,
-      scaleFrom: 3.8,
-      scaleTo: 1.6,
-      yFrom: 200,
-      yTo: 0,
-      minScale: 1.0,
-      maxScale: 3.8,
-    },
-    person: {
-      type: 'img',
-      src: 'P10.png',
-      height: 820,
-      start: 6,
-      end: 12,
-      scaleFrom: 6.5,
-      scaleTo: 0.75,
-      yFrom: 1100,
-      yTo: 420,
-      minScale: 0.75,
-      maxScale: 6.5,
-    },
-  };
+  /* ================= TIME ================= */
 
-  const renderLayer = (layer: typeof layers[keyof typeof layers]) => {
-    // === Check if layer should appear ===
-    if (t < layer.start || t > layer.end) {
-      return null; // completely invisible outside timeline
-    }
+  // Normalized progress (0 → 1)
+  const progress = frame / durationInFrames;
 
-    // === SCALE & POSITION ===
-    const scale = interpolate(t, [layer.start, layer.end], [layer.scaleFrom, layer.scaleTo], { easing: ease });
-    const y = interpolate(t, [layer.start, layer.end], [layer.yFrom, layer.yTo], { easing: ease });
+  // Smooth cinematic motion
+  const eased = interpolate(
+    progress,
+    [0, 1],
+    [0, 1],
+    { easing: Easing.inOut(Easing.cubic) }
+  );
 
-    // === Render ===
-    if (layer.type === 'video') {
-      return (
+  /* ================= CAMERA ================= */
+
+  // CAMERA Z
+  // MIN: 0        → camera close
+  // MAX: -1200    → camera pulled back (safe)
+  const cameraZ = interpolate(
+    eased,
+    [0, 1],
+    [0, -1200]
+  );
+
+  /* ================= FIXED WORLD POSITIONS ================= */
+
+  /* ☁️ CLOUDS (BACKGROUND) */
+  // Z MIN: -1800  (far)
+  // Z MAX: -3000  (very far)
+  const CLOUD_Z = -2200;
+
+  // SCALE MIN: 1.8  → fills screen
+  // SCALE MAX: 3.0  → infinite sky illusion
+  const CLOUD_SCALE = 2.4;
+
+  /* 🏠 HOUSE (MIDGROUND) */
+  // Z MIN: -700
+  // Z MAX: -1400
+  const HOUSE_Z = -900;
+
+  // Y MIN: 100   → higher
+  // Y MAX: 400   → grounded
+  const HOUSE_Y = 220;
+
+  // SCALE MIN: 0.9
+  // SCALE MAX: 1.4
+  const HOUSE_SCALE = 1.1;
+
+  /* 👤 PERSON (FOREGROUND) */
+  // Z MIN: -300
+  // Z MAX: -700
+  const PERSON_Z = -400;
+
+  // Y MIN: 300
+  // Y MAX: 600
+  const PERSON_Y = 440;
+
+  // SCALE MIN: 0.6
+  // SCALE MAX: 1.6
+  const PERSON_SCALE = 1.3;
+
+  return (
+    <AbsoluteFill
+      style={{
+        backgroundColor: '#000',
+        perspective: 1200, // 800–1600 SAFE
+        overflow: 'hidden',
+      }}
+    >
+      {/* ================= CAMERA RIG ================= */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          transformStyle: 'preserve-3d',
+          transform: `translateZ(${cameraZ}px)`,
+        }}
+      >
+
+        {/* ☁️ CLOUDS — BACKGROUND */}
         <AbsoluteFill
-          key={layer.src}
-          style={{ transform: `translateY(${y}px) scale(${scale})` }}
+          style={{
+            transform: `
+              translateZ(${CLOUD_Z}px)
+              scale(${CLOUD_SCALE})
+            `,
+          }}
         >
           <Video
-            src={staticFile(layer.src)}
+            src={staticFile('Cloud.mp4')}
             muted
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
           />
         </AbsoluteFill>
-      );
-    }
 
-    if (layer.type === 'img') {
-      return (
+        {/* 🏠 HOUSE — MIDGROUND */}
         <AbsoluteFill
-          key={layer.src}
           style={{
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'flex-end',
-            transform: `translateY(${y}px) scale(${scale})`,
+            transform: `
+              translateY(${HOUSE_Y}px)
+              translateZ(${HOUSE_Z}px)
+              scale(${HOUSE_SCALE})
+            `,
           }}
         >
-          <Img src={staticFile(layer.src)} style={{ height: layer.height ?? 800 }} />
+          <Img src={staticFile('House.png')} />
         </AbsoluteFill>
-      );
-    }
 
-    return null;
-  };
+        {/* 👤 PERSON — FOREGROUND */}
+        <AbsoluteFill
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'flex-end',
+            transform: `
+              translateY(${PERSON_Y}px)
+              translateZ(${PERSON_Z}px)
+              scale(${PERSON_SCALE})
+            `,
+          }}
+        >
+          <Img src={staticFile('P10.png')} />
+        </AbsoluteFill>
 
-  return <AbsoluteFill style={{ backgroundColor: 'black', overflow: 'hidden' }}>{Object.values(layers).map(renderLayer)}</AbsoluteFill>;
+      </div>
+    </AbsoluteFill>
+  );
 };
 
 export default Scene;
