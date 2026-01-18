@@ -1,122 +1,27 @@
-import React from 'react';
-import {
-  AbsoluteFill,
-  Video,
-  Img,
-  useCurrentFrame,
-  useVideoConfig,
-  interpolate,
-  Easing,
-  staticFile,
-} from 'remotion';
+The cide is cool , i love it but you reversed it , it shows the perosn first , cause i needed like this
 
-const Scene: React.FC = () => {
-  const frame = useCurrentFrame();
-  const { durationInFrames } = useVideoConfig();
+Man cant lie the code wa oretty good , here it is
 
-  /* ================= TIME ================= */
-  const progress = frame / durationInFrames;
-  const ease = Easing.inOut(Easing.cubic);
+import React from 'react'; import { AbsoluteFill, Video, Img, useCurrentFrame, useVideoConfig, interpolate, Easing, staticFile, } from 'remotion';
 
-  /* ================= STAGED REVEAL ================= */
-  // Clouds appear first
-  const cloudP = interpolate(progress, [0, 0.6], [0, 1], {
-    easing: ease,
-    extrapolateRight: 'clamp',
-  });
+const Scene: React.FC = () => { const frame = useCurrentFrame(); const { fps, durationInFrames } = useVideoConfig();
 
-  // House appears second
-  const houseP = interpolate(progress, [0.35, 0.8], [0, 1], {
-    easing: ease,
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
+/* ================= TIME ================= */ // Convert frame → seconds const t = frame / fps;
 
-  // Person appears last
-  const personP = interpolate(progress, [0.7, 1], [0, 1], {
-    easing: ease,
-    extrapolateLeft: 'clamp',
-  });
+// Normalized progress: 0 → 1 for entire video const p = frame / durationInFrames;
 
-  /* ================= CLOUDS (BACKGROUND) ================= */
-  const cloudScale = interpolate(cloudP, [0, 1], [2.6, 1.2]);
-  const cloudY = interpolate(cloudP, [0, 1], [-350, 0]);
+// Smooth cinematic curve const ease = Easing.inOut(Easing.cubic); const progress = interpolate(p, [0, 1], [0, 1], { easing: ease });
 
-  /* ================= HOUSE (MIDGROUND) ================= */
-  const houseScale = interpolate(houseP, [0, 1], [3.5, 1.0]);
-  const houseY = interpolate(houseP, [0, 1], [900, 200]);
+/* ====================================================== CORE RULE (IMPORTANT – THIS IS THE GOLDEN RULE) ----------------------------------------------- BIG SCALE + DOWNWARD POSITION  = CLOSE SMALL SCALE + UPWARD POSITION = FAR ====================================================== */
 
-  /* ================= PERSON (FOREGROUND) ================= */
-  const personScale = interpolate(personP, [0, 1], [7.5, 0.75]);
-  const personY = interpolate(personP, [0, 1], [1200, 420]);
+/* ================= CLOUDS (BACKGROUND) ================= Clouds behave like INFINITE SKY: - Always behind everything - Very slow movement - Small scale change ====================================================== */ const cloudScale = interpolate(progress, [0, 1], [2.4, 1.2]); const cloudY = interpolate(progress, [0, 1], [-300, 0]);
 
-  return (
-    <AbsoluteFill style={{ backgroundColor: 'black', overflow: 'hidden' }}>
-      
-      {/* 🌥 CLOUDS — BACKGROUND */}
-      <AbsoluteFill
-        style={{
-          transform: `
-            translateY(${cloudY}px)
-            scale(${cloudScale})
-          `,
-        }}
-      >
-        <Video
-          src={staticFile('Cloud.mp4')}
-          muted
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-          }}
-        />
-      </AbsoluteFill>
+/* ================= HOUSE (MIDGROUND) ================= House is revealed AFTER clouds: - Starts very large (camera close) - Moves upward - Slowly shrinks ====================================================== */ const houseScale = interpolate(progress, [0, 1], [3.2, 1.0]); const houseY = interpolate(progress, [0, 1], [700, 180]);
 
-      {/* 🏠 HOUSE — MIDGROUND */}
-      <AbsoluteFill
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'flex-end',
-          transform: `
-            translateY(${houseY}px)
-            scale(${houseScale})
-          `,
-        }}
-      >
-        <Img
-          src={staticFile('House.png')}
-          style={{
-            width: '100%',        // Fills 16:9 width
-            maxWidth: '100%',
-            objectFit: 'contain',
-          }}
-        />
-      </AbsoluteFill>
+/* ================= PERSON (FOREGROUND) ================= Person is revealed LAST: - Starts EXTREMELY zoomed - Moves up the MOST - Ends at natural human size ====================================================== */ const personScale = interpolate(progress, [0, 1], [6.5, 0.75]); const personY = interpolate(progress, [0, 1], [1100, 420]);
 
-      {/* 👤 PERSON — FOREGROUND */}
-      <AbsoluteFill
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'flex-end',
-          transform: `
-            translateY(${personY}px)
-            scale(${personScale})
-          `,
-        }}
-      >
-        <Img
-          src={staticFile('P10.png')}
-          style={{
-            height: '85%',        // Natural human framing
-            objectFit: 'contain',
-          }}
-        />
-      </AbsoluteFill>
-    </AbsoluteFill>
-  );
-};
+return ( <AbsoluteFill style={{ backgroundColor: 'black', overflow: 'hidden', }} > {/* 🌥 CLOUDS — ALWAYS BOTTOM LAYER */} <AbsoluteFill style={{ transform:  translateY(${cloudY}px)   scale(${cloudScale}) , }} > <Video src={staticFile('Cloud.mp4')} muted style={{ width: '100%', height: '100%', objectFit: 'cover', }} />
+ {/* 🏠 HOUSE — ON TOP OF CLOUDS */}     <AbsoluteFill       style={{         display: 'flex',         justifyContent: 'center',         alignItems: 'flex-end',         transform:           translateY(${houseY}px)           scale(${houseScale})         ,       }}     >       <Img         src={staticFile('House.png')}         style={{           height: '620px',         }}       />     </AbsoluteFill>      {/* 👤 PERSON — TOPMOST LAYER */}     <AbsoluteFill       style={{         display: 'flex',         justifyContent: 'center',         alignItems: 'flex-end',         transform:            translateY(${personY}px)           scale(${personScale})         ,       }}     >       <Img         src={staticFile('P10.png')}         style={{           height: '820px',         }}       />     </AbsoluteFill>   </AbsoluteFill>   
+); };
 
 export default Scene;
