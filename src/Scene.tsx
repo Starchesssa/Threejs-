@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   AbsoluteFill,
@@ -12,50 +13,61 @@ import {
 
 const Scene: React.FC = () => {
   const frame = useCurrentFrame();
-  const { durationInFrames } = useVideoConfig();
+  const { fps, durationInFrames } = useVideoConfig();
 
-  /* ======================================================
-     TIME
-     ====================================================== */
-
-  // 0 → 1 for entire video
+  /* ================= TIME ================= */
+  // Normalized progress 0 → 1 for the entire video
   const progress = frame / durationInFrames;
 
-  // Smooth cinematic curve
-  const eased = interpolate(progress, [0, 1], [0, 1], {
-    easing: Easing.inOut(Easing.cubic),
-  });
+  /* ================= CAMERA MOVEMENT ================= */
+  // Phase breakdown (based on total video progress):
+  // Phase 1: 0% → 33% of video (first ~4 sec if 12 sec video)
+  // Phase 2: 33% → 66% of video (middle ~4 sec)
+  // Phase 3: 66% → 100% of video (last ~4 sec)
 
-  /* ======================================================
-     FAKE CAMERA Z (THE MOST IMPORTANT PART)
-     ====================================================== */
+  const ease = Easing.inOut(Easing.cubic);
+
+  // Phase 1: Camera behind BG → between BG/MG
+  const phase1 = interpolate(progress, [0, 0.33], [-2800, -2000], { easing: ease });
+
+  // Phase 2: Camera between MG/FG
+  const phase2 = interpolate(progress, [0.33, 0.66], [-1700, -1000], { easing: ease });
+
+  // Phase 3: Camera passes FG
+  const phase3 = interpolate(progress, [0.66, 1], [-800, -200], { easing: ease });
+
+  // Determine cameraZ based on current progress
+  let cameraZ = 0;
+  if (progress <= 0.33) cameraZ = phase1;
+  else if (progress <= 0.66) cameraZ = phase2;
+  else cameraZ = phase3;
+
+  /* ================= LAYERS (FIXED Z) ================= */
+  /**
+   * Cloud Layer (BG)
+   * Z: -3000 → very far
+   * Scale: 2.6 → fills screen
+   */
+  const CLOUD_Z = -3000;
+  const CLOUD_SCALE = 2.6;
 
   /**
-   * Camera starts DEEP in the scene (cannot see anything)
-   * Then pulls BACKWARD revealing layers one by one
-   *
-   * -3500 → camera behind clouds (nothing visible)
-   *  -2500 → clouds appear
-   *  -1500 → house appears
-   *   -500 → person appears
+   * House Layer (Midground)
+   * Z: -1800 → mid distance
+   * Y: 240 → vertical position
+   * Scale: 1.1 → normal size
    */
-  const cameraZ = interpolate(eased, [0, 1], [-3500, -200]);
-
-  /* ======================================================
-     WORLD LAYERS (FIXED — NEVER ANIMATED)
-     ====================================================== */
-
-  /* ☁️ CLOUDS — VERY FAR */
-  const CLOUD_Z = -3000;      // Appears first
-  const CLOUD_SCALE = 2.6;    // Big to fill screen
-
-  /* 🏠 HOUSE — MID */
-  const HOUSE_Z = -1800;      // Appears after clouds
+  const HOUSE_Z = -1800;
   const HOUSE_Y = 240;
   const HOUSE_SCALE = 1.1;
 
-  /* 👤 PERSON — CLOSE */
-  const PERSON_Z = -900;      // Appears LAST
+  /**
+   * Person Layer (Foreground)
+   * Z: -900 → closest
+   * Y: 460 → vertical position
+   * Scale: 1.3 → slightly larger
+   */
+  const PERSON_Z = -900;
   const PERSON_Y = 460;
   const PERSON_SCALE = 1.3;
 
@@ -63,7 +75,7 @@ const Scene: React.FC = () => {
     <AbsoluteFill
       style={{
         backgroundColor: '#000',
-        perspective: 1400, // Controls depth strength
+        perspective: 1400, // depth strength
         overflow: 'hidden',
       }}
     >
@@ -73,15 +85,10 @@ const Scene: React.FC = () => {
           position: 'absolute',
           inset: 0,
           transformStyle: 'preserve-3d',
-
-          /**
-           * THIS IS THE CAMERA
-           * Moving this Z value reveals layers
-           */
           transform: `translateZ(${cameraZ}px)`,
         }}
       >
-        {/* ☁️ CLOUDS */}
+        {/* ☁️ CLOUDS — Background */}
         <AbsoluteFill
           style={{
             transform: `
@@ -101,7 +108,7 @@ const Scene: React.FC = () => {
           />
         </AbsoluteFill>
 
-        {/* 🏠 HOUSE */}
+        {/* 🏠 HOUSE — Midground */}
         <AbsoluteFill
           style={{
             display: 'flex',
@@ -117,7 +124,7 @@ const Scene: React.FC = () => {
           <Img src={staticFile('House.png')} />
         </AbsoluteFill>
 
-        {/* 👤 PERSON */}
+        {/* 👤 PERSON — Foreground */}
         <AbsoluteFill
           style={{
             display: 'flex',
