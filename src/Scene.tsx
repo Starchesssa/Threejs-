@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   AbsoluteFill,
@@ -13,24 +12,43 @@ import {
 
 const Scene: React.FC = () => {
   const frame = useCurrentFrame();
-  const { fps, durationInFrames } = useVideoConfig();
+  const { durationInFrames } = useVideoConfig();
 
   /* ================= TIME ================= */
-  const p = frame / durationInFrames;
+  const progress = frame / durationInFrames;
   const ease = Easing.inOut(Easing.cubic);
-  const progress = interpolate(p, [0, 1], [0, 1], { easing: ease });
 
-  /* ================= CLOUDS ================= */
-  const cloudScale = interpolate(progress, [0, 1], [2.4, 1.2]);
-  const cloudY = interpolate(progress, [0, 1], [-300, 0]);
+  /* ================= STAGED REVEAL ================= */
+  // Clouds appear first
+  const cloudP = interpolate(progress, [0, 0.6], [0, 1], {
+    easing: ease,
+    extrapolateRight: 'clamp',
+  });
 
-  /* ================= HOUSE ================= */
-  const houseScale = interpolate(progress, [0, 1], [3.2, 1.0]);
-  const houseY = interpolate(progress, [0, 1], [400, 80]);
+  // House appears second
+  const houseP = interpolate(progress, [0.35, 0.8], [0, 1], {
+    easing: ease,
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
 
-  /* ================= PERSON ================= */
-  const personScale = interpolate(progress, [0, 1], [6.5, 0.75]);
-  const personY = interpolate(progress, [0, 1], [700, 260]);
+  // Person appears last
+  const personP = interpolate(progress, [0.7, 1], [0, 1], {
+    easing: ease,
+    extrapolateLeft: 'clamp',
+  });
+
+  /* ================= CLOUDS (BACKGROUND) ================= */
+  const cloudScale = interpolate(cloudP, [0, 1], [2.6, 1.2]);
+  const cloudY = interpolate(cloudP, [0, 1], [-350, 0]);
+
+  /* ================= HOUSE (MIDGROUND) ================= */
+  const houseScale = interpolate(houseP, [0, 1], [3.5, 1.0]);
+  const houseY = interpolate(houseP, [0, 1], [900, 200]);
+
+  /* ================= PERSON (FOREGROUND) ================= */
+  const personScale = interpolate(personP, [0, 1], [7.5, 0.75]);
+  const personY = interpolate(personP, [0, 1], [1200, 420]);
 
   return (
     <AbsoluteFill style={{ backgroundColor: 'black', overflow: 'hidden' }}>
@@ -47,48 +65,56 @@ const Scene: React.FC = () => {
         <Video
           src={staticFile('Cloud.mp4')}
           muted
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+          }}
         />
       </AbsoluteFill>
 
-      {/* 🏠 HOUSE — FULL WIDTH, CENTERED */}
-      <AbsoluteFill>
+      {/* 🏠 HOUSE — MIDGROUND */}
+      <AbsoluteFill
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'flex-end',
+          transform: `
+            translateY(${houseY}px)
+            scale(${houseScale})
+          `,
+        }}
+      >
         <Img
           src={staticFile('House.png')}
           style={{
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-            width: '100%',          // 🔥 fills 16:9
-            height: 'auto',
-            transform: `
-              translate(-50%, -50%)
-              translateY(${houseY}px)
-              scale(${houseScale})
-            `,
+            width: '100%',        // Fills 16:9 width
+            maxWidth: '100%',
+            objectFit: 'contain',
           }}
         />
       </AbsoluteFill>
 
-      {/* 👤 PERSON — CENTERED FOREGROUND */}
-      <AbsoluteFill>
+      {/* 👤 PERSON — FOREGROUND */}
+      <AbsoluteFill
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'flex-end',
+          transform: `
+            translateY(${personY}px)
+            scale(${personScale})
+          `,
+        }}
+      >
         <Img
           src={staticFile('P10.png')}
           style={{
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-            height: '85vh',
-            width: 'auto',
-            transform: `
-              translate(-50%, -50%)
-              translateY(${personY}px)
-              scale(${personScale})
-            `,
+            height: '85%',        // Natural human framing
+            objectFit: 'contain',
           }}
         />
       </AbsoluteFill>
-
     </AbsoluteFill>
   );
 };
