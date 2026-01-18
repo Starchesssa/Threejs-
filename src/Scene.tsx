@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   AbsoluteFill,
@@ -10,66 +11,135 @@ import {
   staticFile,
 } from 'remotion';
 
+const ease = Easing.inOut(Easing.cubic);
+
 const Scene: React.FC = () => {
   const frame = useCurrentFrame();
-  const { fps, durationInFrames } = useVideoConfig();
-
-  /* ================= TIME ================= */
-
-  // Convert frame → seconds
-  const t = frame / fps;
-
-  // Normalized progress (0 → 1)
-  const p = frame / durationInFrames;
-
-  // Smooth cinematic easing
-  const ease = Easing.inOut(Easing.cubic);
-  const progress = interpolate(p, [0, 1], [0, 1], { easing: ease });
+  const { fps } = useVideoConfig();
 
   /* ======================================================
-     CORE RULE (GOLDEN RULE)
-     -----------------------------------------------
-     BIG SCALE + DOWNWARD POSITION  = CLOSE
-     SMALL SCALE + UPWARD POSITION = FAR
+     TIME
      ====================================================== */
 
-  /* ================= CLOUDS (BACKGROUND) =================
-     - Always behind everything
-     - Very slow movement
-     - Small scale change
-  ====================================================== */
+  // Current time in seconds (THIS drives everything)
+  const t = frame / fps;
 
-  const cloudScale = interpolate(progress, [0, 1], [2.4, 1.2]);
-  const cloudY = interpolate(progress, [0, 1], [-300, 0]);
+  /* ======================================================
+     🌥 CLOUDS — BACKGROUND
+     ====================================================== */
 
-  /* ================= HOUSE (MIDGROUND) =================
-     - Revealed after clouds
-     - Starts very large (camera close)
-     - Moves upward
-     - Slowly shrinks
-  ====================================================== */
+  const clouds = {
+    // ⏱ WHEN (seconds)
+    start: 0,
+    end: 6,
 
-  const houseScale = interpolate(progress, [0, 1], [3.2, 1.0]);
-  const houseY = interpolate(progress, [0, 1], [700, 180]);
+    // 🔍 SCALE (camera distance)
+    // MIN: 1.0   (far)
+    // MAX: 3.0   (close)
+    scaleFrom: 2.4,
+    scaleTo: 1.2,
 
-  /* ================= PERSON (FOREGROUND) =================
-     - Revealed last
-     - EXTREME zoom at start
-     - Moves upward the most
-     - Ends at natural size
-  ====================================================== */
+    // ↕ POSITION Y
+    // MIN: -600  (very high)
+    // MAX: 300   (low)
+    yFrom: -300,
+    yTo: 0,
+  };
 
-  const personScale = interpolate(progress, [0, 1], [6.5, 0.75]);
-  const personY = interpolate(progress, [0, 1], [1100, 420]);
+  const cloudScale = interpolate(
+    t,
+    [clouds.start, clouds.end],
+    [clouds.scaleFrom, clouds.scaleTo],
+    { easing: ease, extrapolateRight: 'clamp' }
+  );
+
+  const cloudY = interpolate(
+    t,
+    [clouds.start, clouds.end],
+    [clouds.yFrom, clouds.yTo],
+    { easing: ease, extrapolateRight: 'clamp' }
+  );
+
+  /* ======================================================
+     🏠 HOUSE — MIDGROUND
+     ====================================================== */
+
+  const house = {
+    // ⏱ WHEN
+    start: 3,
+    end: 8,
+
+    // 🔍 SCALE
+    // MIN: 1.0   (natural)
+    // MAX: 2.2   (fills 16:9)
+    scaleFrom: 3.8,
+    scaleTo: 1.6,
+
+    // ↕ POSITION Y
+    // MIN: -200  (too high)
+    // MAX: 300   (too low)
+    yFrom: 200,
+    yTo: 0,
+  };
+
+  const houseScale = interpolate(
+    t,
+    [house.start, house.end],
+    [house.scaleFrom, house.scaleTo],
+    { easing: ease, extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
+  );
+
+  const houseY = interpolate(
+    t,
+    [house.start, house.end],
+    [house.yFrom, house.yTo],
+    { easing: ease, extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
+  );
+
+  /* ======================================================
+     👤 PERSON — FOREGROUND
+     ====================================================== */
+
+  const person = {
+    // ⏱ WHEN
+    start: 6,
+    end: 10,
+
+    // 🔍 SCALE
+    // MIN: 0.6   (far)
+    // MAX: 7.0   (extreme close)
+    scaleFrom: 6.5,
+    scaleTo: 0.75,
+
+    // ↕ POSITION Y
+    // MIN: 200
+    // MAX: 1200
+    yFrom: 1100,
+    yTo: 420,
+  };
+
+  const personScale = interpolate(
+    t,
+    [person.start, person.end],
+    [person.scaleFrom, person.scaleTo],
+    { easing: ease, extrapolateLeft: 'clamp' }
+  );
+
+  const personY = interpolate(
+    t,
+    [person.start, person.end],
+    [person.yFrom, person.yTo],
+    { easing: ease, extrapolateLeft: 'clamp' }
+  );
+
+  /* ======================================================
+     RENDER
+     ====================================================== */
 
   return (
-    <AbsoluteFill
-      style={{
-        backgroundColor: 'black',
-        overflow: 'hidden',
-      }}
-    >
-      {/* 🌥 CLOUDS — BACK LAYER */}
+    <AbsoluteFill style={{ backgroundColor: 'black', overflow: 'hidden' }}>
+      
+      {/* 🌥 CLOUDS */}
       <AbsoluteFill
         style={{
           transform: `translateY(${cloudY}px) scale(${cloudScale})`,
@@ -78,32 +148,26 @@ const Scene: React.FC = () => {
         <Video
           src={staticFile('Cloud.mp4')}
           muted
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-          }}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />
       </AbsoluteFill>
 
-      {/* 🏠 HOUSE — MID LAYER */}
+      {/* 🏠 HOUSE */}
       <AbsoluteFill
         style={{
           display: 'flex',
           justifyContent: 'center',
-          alignItems: 'flex-end',
+          alignItems: 'center',
           transform: `translateY(${houseY}px) scale(${houseScale})`,
         }}
       >
         <Img
           src={staticFile('House.png')}
-          style={{
-            height: '620px',
-          }}
+          style={{ height: '900px' }}
         />
       </AbsoluteFill>
 
-      {/* 👤 PERSON — FRONT LAYER */}
+      {/* 👤 PERSON */}
       <AbsoluteFill
         style={{
           display: 'flex',
@@ -114,11 +178,10 @@ const Scene: React.FC = () => {
       >
         <Img
           src={staticFile('P10.png')}
-          style={{
-            height: '820px',
-          }}
+          style={{ height: '820px' }}
         />
       </AbsoluteFill>
+
     </AbsoluteFill>
   );
 };
