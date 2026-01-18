@@ -13,80 +13,119 @@ import {
 
 const Scene: React.FC = () => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, durationInFrames } = useVideoConfig();
+
+  /* ================= TIME ================= */
+  // Convert frame → seconds
   const t = frame / fps;
+
+  // Normalized progress: 0 → 1 for entire video
+  const p = frame / durationInFrames;
+
+  // Smooth cinematic curve
   const ease = Easing.inOut(Easing.cubic);
+  const progress = interpolate(p, [0, 1], [0, 1], { easing: ease });
 
-  /* ================= CAMERA ================= */
-  const cameraZ = interpolate(t, [0, 6], [0, 600], { easing: ease });
-  const cameraTilt = interpolate(t, [0, 6], [6, 2]); // looking upward
+  /* ======================================================
+     CORE RULE (IMPORTANT – THIS IS THE GOLDEN RULE)
+     -----------------------------------------------
+     BIG SCALE + DOWNWARD POSITION  = CLOSE
+     SMALL SCALE + UPWARD POSITION = FAR
+  ====================================================== */
 
-  /* ================= DEPTH LAYERS ================= */
-  const CLOUD_Z = -2600;
-  const HOUSE_Z = -1200;
-  const PERSON_Z = -600;
+  /* ================= CLOUDS (BACKGROUND) =================
+     Clouds behave like INFINITE SKY:
+     - Always behind everything
+     - Very slow movement
+     - Small scale change
+  ====================================================== */
+  const cloudScale = interpolate(progress, [0, 1], [2.4, 1.2]);
+  const cloudY = interpolate(progress, [0, 1], [-300, 0]);
+
+  /* ================= HOUSE (MIDGROUND) =================
+     House is revealed AFTER clouds:
+     - Starts very large (camera close)
+     - Moves upward
+     - Slowly shrinks
+  ====================================================== */
+  const houseScale = interpolate(progress, [0, 1], [3.2, 1.0]);
+  const houseY = interpolate(progress, [0, 1], [700, 180]);
+
+  /* ================= PERSON (FOREGROUND) =================
+     Person is revealed LAST:
+     - Starts EXTREMELY zoomed
+     - Moves up the MOST
+     - Ends at natural human size
+  ====================================================== */
+  const personScale = interpolate(progress, [0, 1], [6.5, 0.75]);
+  const personY = interpolate(progress, [0, 1], [1100, 420]);
 
   return (
     <AbsoluteFill
       style={{
-        backgroundColor: '#000',
-        perspective: 1200,
+        backgroundColor: 'black',
         overflow: 'hidden',
       }}
     >
-      {/* CAMERA RIG */}
-      <div
+      {/* 🌥 CLOUDS — ALWAYS BOTTOM LAYER */}
+      <AbsoluteFill
         style={{
-          position: 'absolute',
-          inset: 0,
-          transformStyle: 'preserve-3d',
           transform: `
-            translateZ(${-cameraZ}px)
-            rotateX(${cameraTilt}deg)
+            translateY(${cloudY}px)
+            scale(${cloudScale})
           `,
         }}
       >
-        {/* 🌥 CLOUDS — SKY BACKGROUND */}
-        <AbsoluteFill
+        <Video
+          src={staticFile('Cloud.mp4')}
+          muted
           style={{
-            transform: `
-              translateZ(${CLOUD_Z}px)
-              scale(2.2)
-            `,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
           }}
-        >
-          <Video
-            src={staticFile('Clouds.mp4')}
-            style={{ objectFit: 'cover' }}
-          />
-        </AbsoluteFill>
+        />
+      </AbsoluteFill>
 
-        {/* 🏠 HOUSE — MIDGROUND */}
-        <AbsoluteFill
+      {/* 🏠 HOUSE — ON TOP OF CLOUDS */}
+      <AbsoluteFill
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'flex-end',
+          transform: `
+            translateY(${houseY}px)
+            scale(${houseScale})
+          `,
+        }}
+      >
+        <Img
+          src={staticFile('House.png')}
           style={{
-            transform: `
-              translateY(260px)
-              translateZ(${HOUSE_Z}px)
-              scale(1.2)
-            `,
+            height: '620px',
           }}
-        >
-          <Img src={staticFile('House.png')} />
-        </AbsoluteFill>
+        />
+      </AbsoluteFill>
 
-        {/* 👤 PERSON — FOREGROUND */}
-        <AbsoluteFill
+      {/* 👤 PERSON — TOPMOST LAYER */}
+      <AbsoluteFill
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'flex-end',
+          transform: `
+            translateY(${personY}px)
+            scale(${personScale})
+          `,
+        }}
+      >
+        <Img
+          src={staticFile('P10.png')}
           style={{
-            transform: `
-              translateY(520px)
-              translateZ(${PERSON_Z}px)
-              scale(1.4)
-            `,
+            height: '820px',
           }}
-        >
-          <Img src={staticFile('P10.png')} />
-        </AbsoluteFill>
-      </div>
+        />
+      </AbsoluteFill>
     </AbsoluteFill>
   );
 };
