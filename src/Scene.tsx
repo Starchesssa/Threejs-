@@ -72,8 +72,8 @@ const Scene: React.FC = () => {
     // 🔍 SCALE
     // MIN: 1.0   (natural)
     // MAX: 2.2   (fills 16:9)
-    scaleFrom: 3.8,
-    scaleTo: 1.6,
+    scaleFrom: 5.8,
+    scaleTo: 3.6,
 
     // ↕ POSITION Y
     // MIN: -200  (too high)
