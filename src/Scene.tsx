@@ -1,6 +1,4 @@
-The cide is cool , i love it but you reversed it , it shows the perosn first , cause i needed like this
 
-Man cant lie the code wa oretty good , here it is
 
 import React from 'react'; import { AbsoluteFill, Video, Img, useCurrentFrame, useVideoConfig, interpolate, Easing, staticFile, } from 'remotion';
 
