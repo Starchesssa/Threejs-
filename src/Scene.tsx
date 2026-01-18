@@ -12,74 +12,58 @@ import {
 
 const Scene: React.FC = () => {
   const frame = useCurrentFrame();
-  const { fps, durationInFrames } = useVideoConfig();
+  const { durationInFrames } = useVideoConfig();
 
-  /* ================= TIME ================= */
+  /* ======================================================
+     TIME
+     ====================================================== */
 
-  // Normalized progress (0 → 1)
+  // 0 → 1 for entire video
   const progress = frame / durationInFrames;
 
-  // Smooth cinematic motion
-  const eased = interpolate(
-    progress,
-    [0, 1],
-    [0, 1],
-    { easing: Easing.inOut(Easing.cubic) }
-  );
+  // Smooth cinematic curve
+  const eased = interpolate(progress, [0, 1], [0, 1], {
+    easing: Easing.inOut(Easing.cubic),
+  });
 
-  /* ================= CAMERA ================= */
+  /* ======================================================
+     FAKE CAMERA Z (THE MOST IMPORTANT PART)
+     ====================================================== */
 
-  // CAMERA Z
-  // MIN: 0        → camera close
-  // MAX: -1200    → camera pulled back (safe)
-  const cameraZ = interpolate(
-    eased,
-    [0, 1],
-    [0, -1200]
-  );
+  /**
+   * Camera starts DEEP in the scene (cannot see anything)
+   * Then pulls BACKWARD revealing layers one by one
+   *
+   * -3500 → camera behind clouds (nothing visible)
+   *  -2500 → clouds appear
+   *  -1500 → house appears
+   *   -500 → person appears
+   */
+  const cameraZ = interpolate(eased, [0, 1], [-3500, -200]);
 
-  /* ================= FIXED WORLD POSITIONS ================= */
+  /* ======================================================
+     WORLD LAYERS (FIXED — NEVER ANIMATED)
+     ====================================================== */
 
-  /* ☁️ CLOUDS (BACKGROUND) */
-  // Z MIN: -1800  (far)
-  // Z MAX: -3000  (very far)
-  const CLOUD_Z = -2200;
+  /* ☁️ CLOUDS — VERY FAR */
+  const CLOUD_Z = -3000;      // Appears first
+  const CLOUD_SCALE = 2.6;    // Big to fill screen
 
-  // SCALE MIN: 1.8  → fills screen
-  // SCALE MAX: 3.0  → infinite sky illusion
-  const CLOUD_SCALE = 2.4;
-
-  /* 🏠 HOUSE (MIDGROUND) */
-  // Z MIN: -700
-  // Z MAX: -1400
-  const HOUSE_Z = -900;
-
-  // Y MIN: 100   → higher
-  // Y MAX: 400   → grounded
-  const HOUSE_Y = 220;
-
-  // SCALE MIN: 0.9
-  // SCALE MAX: 1.4
+  /* 🏠 HOUSE — MID */
+  const HOUSE_Z = -1800;      // Appears after clouds
+  const HOUSE_Y = 240;
   const HOUSE_SCALE = 1.1;
 
-  /* 👤 PERSON (FOREGROUND) */
-  // Z MIN: -300
-  // Z MAX: -700
-  const PERSON_Z = -400;
-
-  // Y MIN: 300
-  // Y MAX: 600
-  const PERSON_Y = 440;
-
-  // SCALE MIN: 0.6
-  // SCALE MAX: 1.6
+  /* 👤 PERSON — CLOSE */
+  const PERSON_Z = -900;      // Appears LAST
+  const PERSON_Y = 460;
   const PERSON_SCALE = 1.3;
 
   return (
     <AbsoluteFill
       style={{
         backgroundColor: '#000',
-        perspective: 1200, // 800–1600 SAFE
+        perspective: 1400, // Controls depth strength
         overflow: 'hidden',
       }}
     >
@@ -89,11 +73,15 @@ const Scene: React.FC = () => {
           position: 'absolute',
           inset: 0,
           transformStyle: 'preserve-3d',
+
+          /**
+           * THIS IS THE CAMERA
+           * Moving this Z value reveals layers
+           */
           transform: `translateZ(${cameraZ}px)`,
         }}
       >
-
-        {/* ☁️ CLOUDS — BACKGROUND */}
+        {/* ☁️ CLOUDS */}
         <AbsoluteFill
           style={{
             transform: `
@@ -113,7 +101,7 @@ const Scene: React.FC = () => {
           />
         </AbsoluteFill>
 
-        {/* 🏠 HOUSE — MIDGROUND */}
+        {/* 🏠 HOUSE */}
         <AbsoluteFill
           style={{
             display: 'flex',
@@ -129,7 +117,7 @@ const Scene: React.FC = () => {
           <Img src={staticFile('House.png')} />
         </AbsoluteFill>
 
-        {/* 👤 PERSON — FOREGROUND */}
+        {/* 👤 PERSON */}
         <AbsoluteFill
           style={{
             display: 'flex',
@@ -144,7 +132,6 @@ const Scene: React.FC = () => {
         >
           <Img src={staticFile('P10.png')} />
         </AbsoluteFill>
-
       </div>
     </AbsoluteFill>
   );
