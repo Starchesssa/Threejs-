@@ -71,28 +71,21 @@ const Scene: React.FC = () => {
   };
 
   const renderLayer = (layer: typeof layers[keyof typeof layers]) => {
-    // === SCALE ===
-    const scale =
-      t < layer.start || t > layer.end
-        ? 0 // invisible outside timeline
-        : interpolate(t, [layer.start, layer.end], [layer.scaleFrom, layer.scaleTo], { easing: ease });
+    // === Check if layer should appear ===
+    if (t < layer.start || t > layer.end) {
+      return null; // completely invisible outside timeline
+    }
 
-    // === POSITION Y ===
-    const y =
-      t < layer.start
-        ? layer.yFrom + 300 // offscreen before start
-        : t > layer.end
-        ? layer.yTo + 300   // offscreen after end
-        : interpolate(t, [layer.start, layer.end], [layer.yFrom, layer.yTo], { easing: ease });
+    // === SCALE & POSITION ===
+    const scale = interpolate(t, [layer.start, layer.end], [layer.scaleFrom, layer.scaleTo], { easing: ease });
+    const y = interpolate(t, [layer.start, layer.end], [layer.yFrom, layer.yTo], { easing: ease });
 
-    // === OPACITY ===
-    const opacity = t < layer.start || t > layer.end ? 0 : 1;
-
+    // === Render ===
     if (layer.type === 'video') {
       return (
         <AbsoluteFill
           key={layer.src}
-          style={{ transform: `translateY(${y}px) scale(${scale})`, opacity }}
+          style={{ transform: `translateY(${y}px) scale(${scale})` }}
         >
           <Video
             src={staticFile(layer.src)}
@@ -112,7 +105,6 @@ const Scene: React.FC = () => {
             justifyContent: 'center',
             alignItems: 'flex-end',
             transform: `translateY(${y}px) scale(${scale})`,
-            opacity,
           }}
         >
           <Img src={staticFile(layer.src)} style={{ height: layer.height ?? 800 }} />
