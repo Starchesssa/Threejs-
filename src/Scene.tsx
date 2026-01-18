@@ -11,179 +11,137 @@ import {
   staticFile,
 } from 'remotion';
 
+/* ======================================================
+   KEYFRAME TEMPLATE INTERFACE
+   ====================================================== */
+type KeyframeLayer = {
+  start: number;      // seconds when animation starts
+  end: number;        // seconds when animation ends
+  scaleFrom: number;  // starting scale
+  scaleTo: number;    // ending scale
+  yFrom: number;      // starting Y position
+  yTo: number;        // ending Y position
+};
+
 const ease = Easing.inOut(Easing.cubic);
 
 const Scene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  /* ======================================================
-     TIME
-     ====================================================== */
-
-  // Current time in seconds (THIS drives everything)
+  // current time in seconds
   const t = frame / fps;
 
   /* ======================================================
-     🌥 CLOUDS — BACKGROUND
+     DEFINE LAYERS WITH KEYFRAMES
      ====================================================== */
 
-  const clouds = {
-    // ⏱ WHEN (seconds)
-    start: 0,
-    end: 6,
-
-    // 🔍 SCALE (camera distance)
-    // MIN: 1.0   (far)
-    // MAX: 3.0   (close)
-    scaleFrom: 2.4,
-    scaleTo: 1.2,
-
-    // ↕ POSITION Y
-    // MIN: -600  (very high)
-    // MAX: 300   (low)
-    yFrom: -300,
-    yTo: 0,
+  const layers: { [key: string]: KeyframeLayer & { type: 'img' | 'video'; src: string; height?: number } } = {
+    clouds: {
+      type: 'video',
+      src: 'Cloud.mp4',
+      start: 0,
+      end: 6,
+      scaleFrom: 2.4,
+      scaleTo: 1.2,
+      yFrom: -300,
+      yTo: 0,
+    },
+    house: {
+      type: 'img',
+      src: 'House.png',
+      height: 900,
+      start: 3,
+      end: 8,
+      scaleFrom: 3.8,
+      scaleTo: 1.6,
+      yFrom: 200,
+      yTo: 0,
+    },
+    person: {
+      type: 'img',
+      src: 'P10.png',
+      height: 820,
+      start: 6,
+      end: 10,
+      scaleFrom: 6.5,
+      scaleTo: 0.75,
+      yFrom: 1100,
+      yTo: 420,
+    },
   };
 
-  const cloudScale = interpolate(
-    t,
-    [clouds.start, clouds.end],
-    [clouds.scaleFrom, clouds.scaleTo],
-    { easing: ease, extrapolateRight: 'clamp' }
-  );
-
-  const cloudY = interpolate(
-    t,
-    [clouds.start, clouds.end],
-    [clouds.yFrom, clouds.yTo],
-    { easing: ease, extrapolateRight: 'clamp' }
-  );
-
   /* ======================================================
-     🏠 HOUSE — MIDGROUND
+     RENDER FUNCTION
      ====================================================== */
+  const renderLayer = (layer: typeof layers[keyof typeof layers]) => {
+    // Calculate scale and Y based on time
+    const scale =
+      t < layer.start
+        ? 0 // invisible before start
+        : interpolate(t, [layer.start, layer.end], [layer.scaleFrom, layer.scaleTo], {
+            easing: ease,
+            extrapolateRight: 'clamp',
+          });
 
-  const house = {
-    // ⏱ WHEN
-    start: 3,
-    end: 8,
+    const y =
+      t < layer.start
+        ? layer.yFrom + 300 // offscreen before start
+        : interpolate(t, [layer.start, layer.end], [layer.yFrom, layer.yTo], {
+            easing: ease,
+            extrapolateRight: 'clamp',
+          });
 
-    // 🔍 SCALE
-    // MIN: 1.0   (natural)
-    // MAX: 2.2   (fills 16:9)
-    scaleFrom: 5.8,
-    scaleTo: 3.6,
+    // Optional: fade-in
+    const opacity =
+      t < layer.start
+        ? 0
+        : interpolate(t, [layer.start, layer.end], [0, 1], { easing: ease, extrapolateRight: 'clamp' });
 
-    // ↕ POSITION Y
-    // MIN: -200  (too high)
-    // MAX: 300   (too low)
-    yFrom: 200,
-    yTo: 0,
+    // Return JSX
+    if (layer.type === 'video') {
+      return (
+        <AbsoluteFill
+          key={layer.src}
+          style={{
+            transform: `translateY(${y}px) scale(${scale})`,
+            opacity,
+          }}
+        >
+          <Video
+            src={staticFile(layer.src)}
+            muted
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
+          />
+        </AbsoluteFill>
+      );
+    }
+
+    if (layer.type === 'img') {
+      return (
+        <AbsoluteFill
+          key={layer.src}
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'flex-end',
+            transform: `translateY(${y}px) scale(${scale})`,
+            opacity,
+          }}
+        >
+          <Img src={staticFile(layer.src)} style={{ height: layer.height ?? 800 }} />
+        </AbsoluteFill>
+      );
+    }
+
+    return null;
   };
 
-  const houseScale = interpolate(
-    t,
-    [house.start, house.end],
-    [house.scaleFrom, house.scaleTo],
-    { easing: ease, extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
-  );
-
-  const houseY = interpolate(
-    t,
-    [house.start, house.end],
-    [house.yFrom, house.yTo],
-    { easing: ease, extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
-  );
-
-  /* ======================================================
-     👤 PERSON — FOREGROUND
-     ====================================================== */
-
-  const person = {
-    // ⏱ WHEN
-    start: 6,
-    end: 10,
-
-    // 🔍 SCALE
-    // MIN: 0.6   (far)
-    // MAX: 7.0   (extreme close)
-    scaleFrom: 6.5,
-    scaleTo: 0.75,
-
-    // ↕ POSITION Y
-    // MIN: 200
-    // MAX: 1200
-    yFrom: 1100,
-    yTo: 420,
-  };
-
-  const personScale = interpolate(
-    t,
-    [person.start, person.end],
-    [person.scaleFrom, person.scaleTo],
-    { easing: ease, extrapolateLeft: 'clamp' }
-  );
-
-  const personY = interpolate(
-    t,
-    [person.start, person.end],
-    [person.yFrom, person.yTo],
-    { easing: ease, extrapolateLeft: 'clamp' }
-  );
-
-  /* ======================================================
-     RENDER
-     ====================================================== */
-
-  return (
-    <AbsoluteFill style={{ backgroundColor: 'black', overflow: 'hidden' }}>
-      
-      {/* 🌥 CLOUDS */}
-      <AbsoluteFill
-        style={{
-          transform: `translateY(${cloudY}px) scale(${cloudScale})`,
-        }}
-      >
-        <Video
-          src={staticFile('Cloud.mp4')}
-          muted
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        />
-      </AbsoluteFill>
-
-      {/* 🏠 HOUSE */}
-      <AbsoluteFill
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          transform: `translateY(${houseY}px) scale(${houseScale})`,
-        }}
-      >
-        <Img
-          src={staticFile('House.png')}
-          style={{ height: '900px' }}
-        />
-      </AbsoluteFill>
-
-      {/* 👤 PERSON */}
-      <AbsoluteFill
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'flex-end',
-          transform: `translateY(${personY}px) scale(${personScale})`,
-        }}
-      >
-        <Img
-          src={staticFile('P10.png')}
-          style={{ height: '820px' }}
-        />
-      </AbsoluteFill>
-
-    </AbsoluteFill>
-  );
+  return <AbsoluteFill style={{ backgroundColor: 'black', overflow: 'hidden' }}>{Object.values(layers).map(renderLayer)}</AbsoluteFill>;
 };
 
 export default Scene;
