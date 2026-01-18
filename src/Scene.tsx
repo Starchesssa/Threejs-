@@ -14,68 +14,73 @@ import {
 const Scene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-
   const t = frame / fps;
   const ease = Easing.inOut(Easing.cubic);
 
-  /* ---------------- CAMERA ---------------- */
-  // Camera moves FORWARD toward the subject
-  const cameraZ = interpolate(
-    t,
-    [0, 6],
-    [300, -300],
-    { easing: ease }
-  );
+  /* ================= CAMERA ================= */
+  const cameraZ = interpolate(t, [0, 6], [0, 600], { easing: ease });
+  const cameraTilt = interpolate(t, [0, 6], [6, 2]); // looking upward
 
-  /* ---------------- WORLD POSITIONS ---------------- */
-  const CLOUD_Z = -600;   // far background
-  const HOUSE_Z = -350;   // midground
-  const PERSON_Z = -120;  // foreground (very close)
+  /* ================= DEPTH LAYERS ================= */
+  const CLOUD_Z = -2600;
+  const HOUSE_Z = -1200;
+  const PERSON_Z = -600;
 
   return (
     <AbsoluteFill
       style={{
-        backgroundColor: 'black',
-        perspective: 500, // STRONG perspective = close feel
+        backgroundColor: '#000',
+        perspective: 1200,
         overflow: 'hidden',
       }}
     >
-      {/* CAMERA */}
+      {/* CAMERA RIG */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
           transformStyle: 'preserve-3d',
-          transform: `translateZ(${cameraZ}px)`,
+          transform: `
+            translateZ(${-cameraZ}px)
+            rotateX(${cameraTilt}deg)
+          `,
         }}
       >
-        {/* 🌥 CLOUDS (BACKGROUND) */}
-        <AbsoluteFill
-          style={{
-            transform: `translateZ(${CLOUD_Z}px) scale(1.05)`,
-          }}
-        >
-          <Video src={staticFile('Cloud.mp4')} />
-        </AbsoluteFill>
-
-        {/* 🏠 HOUSE (MIDGROUND) */}
+        {/* 🌥 CLOUDS — SKY BACKGROUND */}
         <AbsoluteFill
           style={{
             transform: `
-              translateY(200px)
+              translateZ(${CLOUD_Z}px)
+              scale(2.2)
+            `,
+          }}
+        >
+          <Video
+            src={staticFile('Clouds.mp4')}
+            style={{ objectFit: 'cover' }}
+          />
+        </AbsoluteFill>
+
+        {/* 🏠 HOUSE — MIDGROUND */}
+        <AbsoluteFill
+          style={{
+            transform: `
+              translateY(260px)
               translateZ(${HOUSE_Z}px)
+              scale(1.2)
             `,
           }}
         >
           <Img src={staticFile('House.png')} />
         </AbsoluteFill>
 
-        {/* 👤 PERSON (FOREGROUND) */}
+        {/* 👤 PERSON — FOREGROUND */}
         <AbsoluteFill
           style={{
             transform: `
-              translateY(420px)
+              translateY(520px)
               translateZ(${PERSON_Z}px)
+              scale(1.4)
             `,
           }}
         >
