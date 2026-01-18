@@ -11,9 +11,6 @@ import {
   staticFile,
 } from 'remotion';
 
-/* ======================================================
-   KEYFRAME TEMPLATE INTERFACE
-   ====================================================== */
 type KeyframeLayer = {
   start: number;      // seconds when animation starts
   end: number;        // seconds when animation ends
@@ -21,6 +18,8 @@ type KeyframeLayer = {
   scaleTo: number;    // ending scale
   yFrom: number;      // starting Y position
   yTo: number;        // ending Y position
+  minScale?: number;  // optional limit for tweaking
+  maxScale?: number;  // optional limit for tweaking
 };
 
 const ease = Easing.inOut(Easing.cubic);
@@ -28,13 +27,7 @@ const ease = Easing.inOut(Easing.cubic);
 const Scene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-
-  // current time in seconds
   const t = frame / fps;
-
-  /* ======================================================
-     DEFINE LAYERS WITH KEYFRAMES
-     ====================================================== */
 
   const layers: { [key: string]: KeyframeLayer & { type: 'img' | 'video'; src: string; height?: number } } = {
     clouds: {
@@ -46,6 +39,8 @@ const Scene: React.FC = () => {
       scaleTo: 1.2,
       yFrom: -300,
       yTo: 0,
+      minScale: 1.0,
+      maxScale: 2.4,
     },
     house: {
       type: 'img',
@@ -57,6 +52,8 @@ const Scene: React.FC = () => {
       scaleTo: 1.6,
       yFrom: 200,
       yTo: 0,
+      minScale: 1.0,
+      maxScale: 3.8,
     },
     person: {
       type: 'img',
@@ -68,54 +65,39 @@ const Scene: React.FC = () => {
       scaleTo: 0.75,
       yFrom: 1100,
       yTo: 420,
+      minScale: 0.75,
+      maxScale: 6.5,
     },
   };
 
-  /* ======================================================
-     RENDER FUNCTION
-     ====================================================== */
   const renderLayer = (layer: typeof layers[keyof typeof layers]) => {
-    // Calculate scale and Y based on time
+    // === SCALE ===
     const scale =
-      t < layer.start
-        ? 0 // invisible before start
-        : interpolate(t, [layer.start, layer.end], [layer.scaleFrom, layer.scaleTo], {
-            easing: ease,
-            extrapolateRight: 'clamp',
-          });
+      t < layer.start || t > layer.end
+        ? 0 // invisible outside timeline
+        : interpolate(t, [layer.start, layer.end], [layer.scaleFrom, layer.scaleTo], { easing: ease });
 
+    // === POSITION Y ===
     const y =
       t < layer.start
         ? layer.yFrom + 300 // offscreen before start
-        : interpolate(t, [layer.start, layer.end], [layer.yFrom, layer.yTo], {
-            easing: ease,
-            extrapolateRight: 'clamp',
-          });
+        : t > layer.end
+        ? layer.yTo + 300   // offscreen after end
+        : interpolate(t, [layer.start, layer.end], [layer.yFrom, layer.yTo], { easing: ease });
 
-    // Optional: fade-in
-    const opacity =
-      t < layer.start
-        ? 0
-        : interpolate(t, [layer.start, layer.end], [0, 1], { easing: ease, extrapolateRight: 'clamp' });
+    // === OPACITY ===
+    const opacity = t < layer.start || t > layer.end ? 0 : 1;
 
-    // Return JSX
     if (layer.type === 'video') {
       return (
         <AbsoluteFill
           key={layer.src}
-          style={{
-            transform: `translateY(${y}px) scale(${scale})`,
-            opacity,
-          }}
+          style={{ transform: `translateY(${y}px) scale(${scale})`, opacity }}
         >
           <Video
             src={staticFile(layer.src)}
             muted
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-            }}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
         </AbsoluteFill>
       );
