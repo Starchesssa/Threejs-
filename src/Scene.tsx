@@ -47,7 +47,7 @@ const Scene: React.FC = () => {
   // Midground
   const MG_Z = -1800;
   const MG_Y = 240;
-  const MG_SCALE = 2.1;
+  const MG_SCALE = 1.7;
 
   // Foreground
   const FG_Z = -900;
