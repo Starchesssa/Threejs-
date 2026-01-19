@@ -42,17 +42,17 @@ const Scene: React.FC = () => {
 
   // Background
   const BG_Z = -3000;
-  const BG_SCALE = 2.6;
+  const BG_SCALE = 3.6;
 
   // Midground
   const MG_Z = -1800;
   const MG_Y = 240;
-  const MG_SCALE = 1.1;
+  const MG_SCALE = 2.1;
 
   // Foreground
   const FG_Z = -900;
   const FG_Y = 460;
-  const FG_SCALE = 1.3;
+  const FG_SCALE = 0.5;
 
   return (
     <AbsoluteFill
