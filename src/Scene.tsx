@@ -25,9 +25,9 @@ const Scene: React.FC = () => {
     progress,
     [0, 0.5, 1],
     [
-      -2600, // Phase 1: behind BG
-      -1400, // Phase 2: between MG & FG
-      -300,  // Phase 3: in front of FG
+      -4600, // Phase 1: behind BG
+      -2200, // Phase 2: between MG & FG
+      -600,  // Phase 3: in front of FG
     ],
     { easing: ease }
   );
