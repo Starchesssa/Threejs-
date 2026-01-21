@@ -36,7 +36,7 @@ const Scene: React.FC = () => {
   // DEPTH_FACTOR = how much it responds to cameraZ (parallax)
   
   const BG = { X: 0, Y: 0, Z: -3000, SCALE: 3.6, DEPTH: 0.2 };  // Background
-  const MG = { X: 0, Y: 240, Z: -1800, SCALE: 1.7, DEPTH: 0.6 }; // Midground
+  const MG = { X: 0, Y: 240, Z: -1800, SCALE: 2.7, DEPTH: 0.6 }; // Midground
   const FG = { X: 0, Y: 460, Z: -900, SCALE: 0.5, DEPTH: 1.0 };  // Foreground
 
   return (
