@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   AbsoluteFill,
@@ -19,31 +18,31 @@ const Scene: React.FC = () => {
   const progress = frame / durationInFrames;
   const ease = Easing.inOut(Easing.cubic);
 
-  /* ================= CAMERA (ONLY Z ANIMATION) ================= */
-  // Camera moves forward/backward (dolly)
+  /* ================= CAMERA (Z ONLY) ================= */
   const cameraDepth = interpolate(
     progress,
-    [0, 0.5, 1],          // progress points: start, mid, end
-    [-4600, -2200, -600], // camera Z positions (min/max)
+    [0, 0.5, 1],
+    [-4600, -2200, -600],
     { easing: ease }
   );
 
-  // Invert for CSS trick: move world instead of camera
+  // Move world instead of camera
   const cameraZ = -cameraDepth;
 
-  /* ================= LAYER POSITIONS ================= */
-  // Each layer has X (horizontal), Y (vertical), Z (depth)
-  // DEPTH_FACTOR = how much it responds to cameraZ (parallax)
-  
-  const BG = { X: 0, Y: 0, Z: -3000, SCALE: 3.6, DEPTH: 0.2 };  // Background
-  const MG = { X: 0, Y: 240, Z: -1800, SCALE: 2.7, DEPTH: 0.6 }; // Midground
-  const FG = { X: 0, Y: 460, Z: -900, SCALE: 0.5, DEPTH: 1.0 };  // Foreground
+  /* ================= LAYERS ================= */
+  // X → horizontal
+  // Y → vertical
+  // Z → depth
+
+  const BG = { X: 0, Y: 0, Z: -3000, SCALE: 3.6 };
+  const MG = { X: 0, Y: 200, Z: -1800, SCALE: 2.7 };
+  const FG = { X: 0, Y: 380, Z: -900, SCALE: 0.5 };
 
   return (
     <AbsoluteFill
       style={{
         backgroundColor: '#000',
-        perspective: 1400, // affects 3D depth feel
+        perspective: 1400,
         overflow: 'hidden',
       }}
     >
@@ -53,12 +52,14 @@ const Scene: React.FC = () => {
           position: 'absolute',
           inset: 0,
           transformStyle: 'preserve-3d',
-          transform: `translateZ(${cameraZ}px)`, // cameraZ only
+          transform: `translateZ(${cameraZ}px)`,
         }}
       >
-        {/* 🌄 BACKGROUND */}
+        {/* 🌄 BACKGROUND (VIDEO) */}
         <AbsoluteFill
           style={{
+            transformStyle: 'preserve-3d',
+            transformOrigin: '50% 50%',
             transform: `
               translateX(${BG.X}px)
               translateY(${BG.Y}px)
@@ -70,16 +71,23 @@ const Scene: React.FC = () => {
           <Video
             src={staticFile('Cloud.mp4')}
             muted
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
           />
         </AbsoluteFill>
 
-        {/* 🏠 MIDGROUND */}
+        {/* 🏠 MIDGROUND (HOUSE) */}
         <AbsoluteFill
           style={{
             display: 'flex',
             justifyContent: 'center',
-            alignItems: 'flex-end',
+            alignItems: 'center',
+
+            transformStyle: 'preserve-3d',
+            transformOrigin: '50% 50%',
             transform: `
               translateX(${MG.X}px)
               translateY(${MG.Y}px)
@@ -88,15 +96,25 @@ const Scene: React.FC = () => {
             `,
           }}
         >
-          <Img src={staticFile('img/House2.png')} />
+          <Img
+            src={staticFile('img/House2.png')}
+            style={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              objectFit: 'contain',
+            }}
+          />
         </AbsoluteFill>
 
-        {/* 👤 FOREGROUND */}
+        {/* 👤 FOREGROUND (PERSON) */}
         <AbsoluteFill
           style={{
             display: 'flex',
             justifyContent: 'center',
-            alignItems: 'flex-end',
+            alignItems: 'center',
+
+            transformStyle: 'preserve-3d',
+            transformOrigin: '50% 50%',
             transform: `
               translateX(${FG.X}px)
               translateY(${FG.Y}px)
@@ -105,7 +123,14 @@ const Scene: React.FC = () => {
             `,
           }}
         >
-          <Img src={staticFile('P10.png')} />
+          <Img
+            src={staticFile('P10.png')}
+            style={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              objectFit: 'contain',
+            }}
+          />
         </AbsoluteFill>
       </div>
     </AbsoluteFill>
