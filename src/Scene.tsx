@@ -88,7 +88,7 @@ const Scene: React.FC = () => {
             `,
           }}
         >
-          <Img src={staticFile('House.png')} />
+          <Img src={staticFile('img/House2.png')} />
         </AbsoluteFill>
 
         {/* 👤 FOREGROUND */}
