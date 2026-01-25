@@ -1,0 +1,36 @@
+
+name: Pixabay Silhouette Fetch
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 2 * * *"   # runs daily
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run Pixabay fetcher
+        env:
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+        run: python pixabay_fetch.py
+
+      - name: Commit results
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add PIXA/SILHOUTTE
+          git commit -m "Auto-fetch Pixabay silhouettes" || echo "No changes"
+          git push
