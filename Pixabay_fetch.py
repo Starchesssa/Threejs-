@@ -10,7 +10,7 @@ API_KEY = "54337256-24810dc27eb2353fb6d973d51"
 
 # Search settings
 QUERY = "business men silhouette"
-PER_PAGE = 20
+PER_PAGE = 200
 OUTPUT_DIR = "PIXA/SILHOUTTE"
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
