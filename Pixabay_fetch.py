@@ -9,7 +9,7 @@ import json
 API_KEY = "54337256-24810dc27eb2353fb6d973d51"
 
 # Search settings
-QUERY = "business silhouette"
+QUERY = "business men silhouette"
 PER_PAGE = 20
 OUTPUT_DIR = "PIXA/SILHOUTTE"
 
