@@ -20,11 +20,15 @@ const Scene: React.FC = () => {
     easing: ease,
   });
 
-  /* ================= DOT BOUNCE (SYNCED) ================= */
+  /* ================= DOT BOUNCE ================= */
   const bounce = Math.abs(Math.sin(progress * Math.PI * 6)) * 60;
 
   /* ================= ROAD LINES ================= */
   const lines = new Array(36).fill(0);
+
+  /* ================= DOT WORLD POSITION ================= */
+  const dotZ = -cameraZ; // dot moves forward in world space
+  const dotY = bounce;   // vertical bounce
 
   return (
     <AbsoluteFill
@@ -40,7 +44,8 @@ const Scene: React.FC = () => {
           position: 'absolute',
           inset: 0,
           transformStyle: 'preserve-3d',
-          transform: `translateZ(${cameraZ}px)`,
+          // Camera follows dot: inverse of dot’s motion
+          transform: `translateZ(${cameraZ}px) translateY(${-dotY}px)`,
         }}
       >
         {/* ================= PATH LINES ================= */}
@@ -66,9 +71,8 @@ const Scene: React.FC = () => {
                 width: 640,
                 height: 10,
                 opacity,
-                background:
-                  'linear-gradient(90deg, #00f0ff, #7b6cff)',
-                borderRadius: '999px', // ✅ smooth edges
+                background: 'linear-gradient(90deg, #00f0ff, #7b6cff)',
+                borderRadius: '999px',
                 boxShadow: `
                   0 0 200px rgba(80,120,255,0.6),
                   inset 0 0 20px rgba(255,255,255,0.6)
@@ -84,23 +88,24 @@ const Scene: React.FC = () => {
           );
         })}
 
-        {/* ================= HERO DOT (FIXED TO CAMERA) ================= */}
+        {/* ================= HERO DOT (WORLD SPACE) ================= */}
         <div
           style={{
             position: 'absolute',
             left: '50%',
-            bottom: `calc(22% + ${bounce}px)`,
+            bottom: '22%',
             width: 28,
             height: 28,
             borderRadius: '50%',
-            background:
-              'radial-gradient(circle, #ffffff, #7b6cff)',
+            background: 'radial-gradient(circle, #ffffff, #7b6cff)',
             boxShadow: `
               0 0 400px rgba(120,140,255,0.9),
               0 0 200px rgba(120,140,255,0.8),
               inset 0 0 60px rgba(255,255,255,0.9)
             `,
-            transform: 'translateX(-50%) translateZ(0px)', // ✅ fixed to camera
+            transformStyle: 'preserve-3d',
+            // Dot moves in world space
+            transform: `translateX(-50%) translateZ(${dotZ}px) translateY(${dotY}px)`,
           }}
         />
 
@@ -112,9 +117,8 @@ const Scene: React.FC = () => {
             bottom: '30%',
             width: 600,
             height: 38,
-            background:
-              'linear-gradient(90deg, #ffffff, #7b6cff)',
-            borderRadius: '16px', // ✅ smooth edges
+            background: 'linear-gradient(90deg, #ffffff, #7b6cff)',
+            borderRadius: '16px',
             boxShadow: '0 0 200px rgba(120,140,255,0.8)',
             transformStyle: 'preserve-3d',
             transform: `
@@ -135,10 +139,9 @@ const Scene: React.FC = () => {
             fontWeight: 900,
             letterSpacing: 12,
             color: '#fff',
-            background:
-              'linear-gradient(180deg, #0b0f2a, #000)',
+            background: 'linear-gradient(180deg, #0b0f2a, #000)',
             border: '6px solid #7b6cff',
-            borderRadius: '16px', // ✅ smooth edges
+            borderRadius: '16px',
             boxShadow: `
               0 0 300px rgba(120,140,255,0.9),
               inset 0 0 40px rgba(120,140,255,0.6)
