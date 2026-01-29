@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   AbsoluteFill,
@@ -18,12 +19,21 @@ const Scene: React.FC = () => {
   const cameraZ = interpolate(
     progress,
     [0, 1],
-    [0, 4200],
+    [0, 5200], // ⬅️ longer journey
     { easing: ease }
   );
 
-  /* ================= ROAD LINES ================= */
-  const lines = new Array(28).fill(0);
+  /* ================= ROAD ================= */
+  const lines = new Array(34).fill(0);
+
+  /* ================= BOUNCING DOT ================= */
+  const bounce = Math.abs(Math.sin(frame * 0.12)) * 60;
+
+  const dotZ = interpolate(
+    progress,
+    [0, 1],
+    [-4200, -900]
+  );
 
   return (
     <AbsoluteFill
@@ -43,21 +53,21 @@ const Scene: React.FC = () => {
         }}
       >
 
-        {/* ================= PATH / ROAD ================= */}
+        {/* ================= PATH ================= */}
         {lines.map((_, i) => {
-          const z = -i * 300;
-          const localZ = z + (cameraZ % 300);
+          const z = -i * 320;
+          const localZ = z + (cameraZ % 320);
 
           const scale = interpolate(
             localZ,
-            [-4500, -300],
-            [0.15, 1.6],
+            [-5200, -400],
+            [0.12, 1.8],
             { extrapolateLeft: 'clamp' }
           );
 
           const opacity = interpolate(
             localZ,
-            [-4500, -600],
+            [-5200, -700],
             [0, 1],
             { extrapolateLeft: 'clamp' }
           );
@@ -69,9 +79,9 @@ const Scene: React.FC = () => {
                 position: 'absolute',
                 left: '50%',
                 bottom: '20%',
-                width: 600,
+                width: 620,
                 height: 8,
-                background: '#ffffff',
+                background: '#fff',
                 opacity,
                 transformStyle: 'preserve-3d',
                 transform: `
@@ -84,40 +94,38 @@ const Scene: React.FC = () => {
           );
         })}
 
-        {/* ================= SIDE RAILS ================= */}
-        {['left', 'right'].map((side, i) => (
-          <div
-            key={side}
-            style={{
-              position: 'absolute',
-              bottom: '20%',
-              left: side === 'left' ? '35%' : '65%',
-              width: 10,
-              height: '60%',
-              background: '#444',
-              transformStyle: 'preserve-3d',
-              transform: `
-                translateX(-50%)
-                translateZ(-1800px)
-                scaleY(2)
-              `,
-            }}
-          />
-        ))}
-
-        {/* ================= FINISH GATE ================= */}
+        {/* ================= BOUNCING DOT ================= */}
         <div
           style={{
             position: 'absolute',
             left: '50%',
-            bottom: '30%',
-            width: 520,
-            height: 40,
+            bottom: `calc(20% + ${bounce}px)`,
+            width: 24,
+            height: 24,
+            borderRadius: '50%',
+            background: 'white',
+            boxShadow: '0 0 30px rgba(255,255,255,0.8)',
+            transformStyle: 'preserve-3d',
+            transform: `
+              translateX(-50%)
+              translateZ(${dotZ}px)
+            `,
+          }}
+        />
+
+        {/* ================= FINISH GATE (FARTHER) ================= */}
+        <div
+          style={{
+            position: 'absolute',
+            left: '50%',
+            bottom: '28%',
+            width: 560,
+            height: 36,
             background: '#fff',
             transformStyle: 'preserve-3d',
             transform: `
               translateX(-50%)
-              translateZ(-300px)
+              translateZ(-600px)
             `,
           }}
         />
@@ -127,8 +135,8 @@ const Scene: React.FC = () => {
           style={{
             position: 'absolute',
             left: '50%',
-            top: '30%',
-            padding: '40px 120px',
+            top: '28%',
+            padding: '42px 130px',
             background: '#000',
             border: '6px solid white',
             fontSize: 96,
@@ -138,7 +146,7 @@ const Scene: React.FC = () => {
             transformStyle: 'preserve-3d',
             transform: `
               translateX(-50%)
-              translateZ(-600px)
+              translateZ(-900px)
             `,
           }}
         >
