@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   AbsoluteFill,
@@ -22,7 +23,7 @@ const Scene: React.FC = () => {
   /* ================= DOT BOUNCE (SYNCED) ================= */
   const bounce = Math.abs(Math.sin(progress * Math.PI * 6)) * 60;
 
-  /* ================= ROAD ================= */
+  /* ================= ROAD LINES ================= */
   const lines = new Array(36).fill(0);
 
   return (
@@ -42,24 +43,18 @@ const Scene: React.FC = () => {
           transform: `translateZ(${cameraZ}px)`,
         }}
       >
-        {/* ================= PATH ================= */}
+        {/* ================= PATH LINES ================= */}
         {lines.map((_, i) => {
           const z = -i * 340;
           const localZ = z + (cameraZ % 340);
 
-          const scale = interpolate(
-            localZ,
-            [-5600, -500],
-            [0.1, 1.9],
-            { extrapolateLeft: 'clamp' }
-          );
+          const scale = interpolate(localZ, [-5600, -500], [0.1, 1.9], {
+            extrapolateLeft: 'clamp',
+          });
 
-          const opacity = interpolate(
-            localZ,
-            [-5600, -800],
-            [0, 1],
-            { extrapolateLeft: 'clamp' }
-          );
+          const opacity = interpolate(localZ, [-5600, -800], [0, 1], {
+            extrapolateLeft: 'clamp',
+          });
 
           return (
             <div
@@ -73,8 +68,9 @@ const Scene: React.FC = () => {
                 opacity,
                 background:
                   'linear-gradient(90deg, #00f0ff, #7b6cff)',
+                borderRadius: '999px', // ✅ smooth edges
                 boxShadow: `
-                  0 0 120px rgba(80,120,255,0.6),
+                  0 0 200px rgba(80,120,255,0.6),
                   inset 0 0 20px rgba(255,255,255,0.6)
                 `,
                 transformStyle: 'preserve-3d',
@@ -88,23 +84,23 @@ const Scene: React.FC = () => {
           );
         })}
 
-        {/* ================= HERO DOT (LOCKED TO CAMERA) ================= */}
+        {/* ================= HERO DOT (FIXED TO CAMERA) ================= */}
         <div
           style={{
             position: 'absolute',
             left: '50%',
             bottom: `calc(22% + ${bounce}px)`,
-            width: 26,
-            height: 26,
+            width: 28,
+            height: 28,
             borderRadius: '50%',
             background:
               'radial-gradient(circle, #ffffff, #7b6cff)',
             boxShadow: `
               0 0 400px rgba(120,140,255,0.9),
               0 0 200px rgba(120,140,255,0.8),
-              inset 0 0 30px rgba(255,255,255,0.9)
+              inset 0 0 60px rgba(255,255,255,0.9)
             `,
-            transform: 'translateX(-50%)',
+            transform: 'translateX(-50%) translateZ(0px)', // ✅ fixed to camera
           }}
         />
 
@@ -118,6 +114,7 @@ const Scene: React.FC = () => {
             height: 38,
             background:
               'linear-gradient(90deg, #ffffff, #7b6cff)',
+            borderRadius: '16px', // ✅ smooth edges
             boxShadow: '0 0 200px rgba(120,140,255,0.8)',
             transformStyle: 'preserve-3d',
             transform: `
@@ -141,6 +138,7 @@ const Scene: React.FC = () => {
             background:
               'linear-gradient(180deg, #0b0f2a, #000)',
             border: '6px solid #7b6cff',
+            borderRadius: '16px', // ✅ smooth edges
             boxShadow: `
               0 0 300px rgba(120,140,255,0.9),
               inset 0 0 40px rgba(120,140,255,0.6)
@@ -151,9 +149,7 @@ const Scene: React.FC = () => {
               translateZ(-1000px)
             `,
           }}
-        >
-          FINISH
-        </div>
+        />
       </div>
 
       {/* ================= NOISE OVERLAY ================= */}
