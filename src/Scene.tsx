@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   AbsoluteFill,
@@ -16,29 +15,20 @@ const Scene: React.FC = () => {
   const ease = Easing.inOut(Easing.cubic);
 
   /* ================= CAMERA ================= */
-  const cameraZ = interpolate(
-    progress,
-    [0, 1],
-    [0, 5200], // ⬅️ longer journey
-    { easing: ease }
-  );
+  const cameraZ = interpolate(progress, [0, 1], [0, 5600], {
+    easing: ease,
+  });
+
+  /* ================= DOT BOUNCE (SYNCED) ================= */
+  const bounce = Math.abs(Math.sin(progress * Math.PI * 6)) * 60;
 
   /* ================= ROAD ================= */
-  const lines = new Array(34).fill(0);
-
-  /* ================= BOUNCING DOT ================= */
-  const bounce = Math.abs(Math.sin(frame * 0.12)) * 60;
-
-  const dotZ = interpolate(
-    progress,
-    [0, 1],
-    [-4200, -900]
-  );
+  const lines = new Array(36).fill(0);
 
   return (
     <AbsoluteFill
       style={{
-        background: 'linear-gradient(#0a0a0a, #000)',
+        background: 'radial-gradient(circle at center, #0c1020, #000)',
         perspective: 1600,
         overflow: 'hidden',
       }}
@@ -52,22 +42,21 @@ const Scene: React.FC = () => {
           transform: `translateZ(${cameraZ}px)`,
         }}
       >
-
         {/* ================= PATH ================= */}
         {lines.map((_, i) => {
-          const z = -i * 320;
-          const localZ = z + (cameraZ % 320);
+          const z = -i * 340;
+          const localZ = z + (cameraZ % 340);
 
           const scale = interpolate(
             localZ,
-            [-5200, -400],
-            [0.12, 1.8],
+            [-5600, -500],
+            [0.1, 1.9],
             { extrapolateLeft: 'clamp' }
           );
 
           const opacity = interpolate(
             localZ,
-            [-5200, -700],
+            [-5600, -800],
             [0, 1],
             { extrapolateLeft: 'clamp' }
           );
@@ -78,11 +67,16 @@ const Scene: React.FC = () => {
               style={{
                 position: 'absolute',
                 left: '50%',
-                bottom: '20%',
-                width: 620,
-                height: 8,
-                background: '#fff',
+                bottom: '22%',
+                width: 640,
+                height: 10,
                 opacity,
+                background:
+                  'linear-gradient(90deg, #00f0ff, #7b6cff)',
+                boxShadow: `
+                  0 0 120px rgba(80,120,255,0.6),
+                  inset 0 0 20px rgba(255,255,255,0.6)
+                `,
                 transformStyle: 'preserve-3d',
                 transform: `
                   translateX(-50%)
@@ -94,38 +88,41 @@ const Scene: React.FC = () => {
           );
         })}
 
-        {/* ================= BOUNCING DOT ================= */}
+        {/* ================= HERO DOT (LOCKED TO CAMERA) ================= */}
         <div
           style={{
             position: 'absolute',
             left: '50%',
-            bottom: `calc(20% + ${bounce}px)`,
-            width: 24,
-            height: 24,
+            bottom: `calc(22% + ${bounce}px)`,
+            width: 26,
+            height: 26,
             borderRadius: '50%',
-            background: 'white',
-            boxShadow: '0 0 30px rgba(255,255,255,0.8)',
-            transformStyle: 'preserve-3d',
-            transform: `
-              translateX(-50%)
-              translateZ(${dotZ}px)
+            background:
+              'radial-gradient(circle, #ffffff, #7b6cff)',
+            boxShadow: `
+              0 0 400px rgba(120,140,255,0.9),
+              0 0 200px rgba(120,140,255,0.8),
+              inset 0 0 30px rgba(255,255,255,0.9)
             `,
+            transform: 'translateX(-50%)',
           }}
         />
 
-        {/* ================= FINISH GATE (FARTHER) ================= */}
+        {/* ================= FINISH GATE ================= */}
         <div
           style={{
             position: 'absolute',
             left: '50%',
-            bottom: '28%',
-            width: 560,
-            height: 36,
-            background: '#fff',
+            bottom: '30%',
+            width: 600,
+            height: 38,
+            background:
+              'linear-gradient(90deg, #ffffff, #7b6cff)',
+            boxShadow: '0 0 200px rgba(120,140,255,0.8)',
             transformStyle: 'preserve-3d',
             transform: `
               translateX(-50%)
-              translateZ(-600px)
+              translateZ(-700px)
             `,
           }}
         />
@@ -135,25 +132,41 @@ const Scene: React.FC = () => {
           style={{
             position: 'absolute',
             left: '50%',
-            top: '28%',
-            padding: '42px 130px',
-            background: '#000',
-            border: '6px solid white',
+            top: '26%',
+            padding: '44px 140px',
             fontSize: 96,
             fontWeight: 900,
-            letterSpacing: 10,
-            color: 'white',
+            letterSpacing: 12,
+            color: '#fff',
+            background:
+              'linear-gradient(180deg, #0b0f2a, #000)',
+            border: '6px solid #7b6cff',
+            boxShadow: `
+              0 0 300px rgba(120,140,255,0.9),
+              inset 0 0 40px rgba(120,140,255,0.6)
+            `,
             transformStyle: 'preserve-3d',
             transform: `
               translateX(-50%)
-              translateZ(-900px)
+              translateZ(-1000px)
             `,
           }}
         >
           FINISH
         </div>
-
       </div>
+
+      {/* ================= NOISE OVERLAY ================= */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background:
+            'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'4\'/%3E%3C/filter%3E%3Crect width=\'200\' height=\'200\' filter=\'url(%23n)\' opacity=\'0.15\'/%3E%3C/svg%3E")',
+          mixBlendMode: 'overlay',
+          pointerEvents: 'none',
+        }}
+      />
     </AbsoluteFill>
   );
 };
