@@ -1,11 +1,10 @@
-
 name: Save React Icons List
 
 on:
-  workflow_dispatch:  # You can trigger manually
+  workflow_dispatch:  # manual trigger
   push:
     branches:
-      - main  # optional, run on push to main branch
+      - main
 
 jobs:
   save-icons:
@@ -14,6 +13,9 @@ jobs:
     steps:
     - name: Checkout repo
       uses: actions/checkout@v3
+      with:
+        persist-credentials: true   # ensures GITHUB_TOKEN works for push
+        fetch-depth: 0              # needed if you plan to commit back
 
     - name: Setup Node.js
       uses: actions/setup-node@v3
@@ -23,6 +25,9 @@ jobs:
     - name: Install dependencies
       run: npm install react-icons
 
+    - name: Give write permissions
+      run: chmod -R u+w .
+
     - name: Run save-icons.js
       run: node save-icons.js
 
@@ -31,7 +36,7 @@ jobs:
         git config --global user.name "github-actions"
         git config --global user.email "github-actions@users.noreply.github.com"
         git add react-icons-list.txt
-        git commit -m "Update React Icons list"
+        git commit -m "Update React Icons list" || echo "No changes to commit"
         git push
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
