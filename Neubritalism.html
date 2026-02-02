@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neo-Brutalism Sample</title>
+
+<!-- Font Awesome for icons -->
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+/>
+
+<style>
+  /* ---- Global ---- */
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Montserrat', sans-serif;
+    background: linear-gradient(135deg, #e0e0e0, #ffffff);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  /* ---- Neo-Brutalism Panel ---- */
+  .brutal-panel {
+    border: 6px solid #111;
+    background-color: #f9f9f9;
+    width: 320px;
+    padding: 24px;
+    margin: 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+  }
+
+  .brutal-panel:hover {
+    transform: translateY(-10px);
+  }
+
+  /* ---- Titles ---- */
+  .title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 16px;
+  }
+
+  /* ---- Accent Text ---- */
+  .accent {
+    color: #ff4f81;
+    font-weight: 700;
+  }
+
+  /* ---- Paragraph ---- */
+  .description {
+    font-size: 1rem;
+    color: #333;
+    margin-bottom: 20px;
+  }
+
+  /* ---- Icons ---- */
+  .icon-row {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 12px;
+  }
+
+  .icon-row i {
+    font-size: 1.5rem;
+    color: #111;
+    border: 2px solid #111;
+    padding: 12px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .icon-row i:hover {
+    background-color: #ff4f81;
+    color: #fff;
+    transform: scale(1.2);
+  }
+
+  /* ---- Background Decorations (Optional) ---- */
+  body::before {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at top left, #ff4f81, transparent 70%),
+                radial-gradient(circle at bottom right, #6366f1, transparent 70%);
+    z-index: -1;
+    opacity: 0.2;
+  }
+</style>
+</head>
+<body>
+
+  <div class="brutal-panel">
+    <h1 class="title">Neo-<span class="accent">Brutalism</span></h1>
+    <p class="description">
+      Bold, edgy, and modern UI style with high contrast and sharp borders. Perfect for attention-grabbing designs.
+    </p>
+
+    <div class="icon-row">
+      <i class="fas fa-star"></i>
+      <i class="fas fa-lightbulb"></i>
+      <i class="fas fa-rocket"></i>
+    </div>
+  </div>
+
+</body>
+</html>
