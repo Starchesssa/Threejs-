@@ -12,103 +12,120 @@
 />
 
 <style>
-  /* ---- Global ---- */
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
+/* ---- Global ---- */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-  body {
-    font-family: 'Montserrat', sans-serif;
-    background: linear-gradient(135deg, #e0e0e0, #ffffff);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-  }
+body {
+  font-family: 'Montserrat', sans-serif;
+  background: #1f1f1f; /* dark industrial base */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
 
-  /* ---- Neo-Brutalism Panel ---- */
-  .brutal-panel {
-    border: 6px solid #111;
-    background-color: #f9f9f9;
-    width: 320px;
-    padding: 24px;
-    margin: 20px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.3s ease;
-  }
+/* ---- Background neon gradients ---- */
+body::before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 20% 30%, #ff4f81, transparent 40%),
+              radial-gradient(circle at 80% 70%, #00f5d4, transparent 40%);
+  z-index: -1;
+  opacity: 0.2;
+}
 
-  .brutal-panel:hover {
-    transform: translateY(-10px);
-  }
+/* ---- Brutal Panel ---- */
+.brutal-panel {
+  border: 6px solid #fff;
+  background: #2c2c2c;
+  width: 360px;
+  padding: 28px;
+  margin: 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.25s ease, background 0.25s ease;
+}
 
-  /* ---- Titles ---- */
-  .title {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #111;
-    margin-bottom: 16px;
-  }
+/* Hover effect: punchy brutalist feel */
+.brutal-panel:hover {
+  transform: translateY(-12px) rotate(-1deg);
+  background: #3a3a3a;
+  border-color: #ff4f81;
+}
 
-  /* ---- Accent Text ---- */
-  .accent {
-    color: #ff4f81;
-    font-weight: 700;
-  }
+/* ---- Titles ---- */
+.title {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 1px;
+  margin-bottom: 18px;
+}
 
-  /* ---- Paragraph ---- */
-  .description {
-    font-size: 1rem;
-    color: #333;
-    margin-bottom: 20px;
-  }
+.accent {
+  color: #00f5d4;
+  font-weight: 900;
+}
 
-  /* ---- Icons ---- */
-  .icon-row {
-    display: flex;
-    justify-content: center;
-    gap: 16px;
-    margin-top: 12px;
-  }
+/* ---- Description ---- */
+.description {
+  font-size: 1rem;
+  color: #ddd;
+  margin-bottom: 24px;
+}
 
-  .icon-row i {
-    font-size: 1.5rem;
-    color: #111;
-    border: 2px solid #111;
-    padding: 12px;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    cursor: pointer;
-  }
+/* ---- Icon Buttons ---- */
+.icon-row {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 12px;
+}
 
-  .icon-row i:hover {
-    background-color: #ff4f81;
-    color: #fff;
-    transform: scale(1.2);
-  }
+.icon-row i {
+  font-size: 1.7rem;
+  color: #fff;
+  border: 3px solid #fff;
+  padding: 16px;
+  border-radius: 6px;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  background: #2c2c2c;
+}
 
-  /* ---- Background Decorations (Optional) ---- */
-  body::before {
-    content: "";
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle at top left, #ff4f81, transparent 70%),
-                radial-gradient(circle at bottom right, #6366f1, transparent 70%);
-    z-index: -1;
-    opacity: 0.2;
-  }
+.icon-row i:hover {
+  transform: rotate(-15deg) scale(1.25);
+  background: #ff4f81;
+  color: #fff;
+  border-color: #00f5d4;
+}
+
+/* ---- Accent block for extra brutalist feel ---- */
+.accent-block {
+  width: 60px;
+  height: 6px;
+  background: #ff4f81;
+  margin: 12px auto;
+  transform: skew(-15deg);
+}
 </style>
 </head>
 <body>
 
   <div class="brutal-panel">
     <h1 class="title">Neo-<span class="accent">Brutalism</span></h1>
+    <div class="accent-block"></div>
     <p class="description">
-      Bold, edgy, and modern UI style with high contrast and sharp borders. Perfect for attention-grabbing designs.
+      Edgy, raw, high-contrast, and bold UI style. Sharp panels, neon accents, and geometric structure.
     </p>
 
     <div class="icon-row">
