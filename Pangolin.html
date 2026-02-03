@@ -1,31 +1,114 @@
 <!DOCTYPE html>
-<html class="nb-light">
+<html lang="en" class="nb-light">
 <head>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/OshekharO/Neubrutalism@main/neubrutalism.css">
-<style>
-  .hero { background: #000; color: #fff; padding: 4rem; text-align: center; }
-  .hero h1 { font-size: 4rem; font-weight: bold; }
-  .btn-accent { background: #ff0000; color: #fff; border: 4px solid #000; }
-</style>
+  <meta charset="UTF-8" />
+  <title>PANGOLIN – ISO Consultancy</title>
+
+  <!-- Neubrutalism CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/OshekharO/Neubrutalism@main/neubrutalism.css">
+
+  <style>
+    body {
+      background: #f5f5f5;
+    }
+
+    /* NAVBAR */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 2rem;
+      background: #fff;
+      border: 5px solid #000;
+      box-shadow: 8px 8px 0 #000;
+      margin: 2rem;
+    }
+
+    .logo {
+      font-size: 2rem;
+      font-weight: 900;
+      text-decoration: none;
+      color: #000;
+    }
+
+    .navbar nav a {
+      margin-left: 1.5rem;
+      font-weight: 700;
+      text-decoration: none;
+      color: #000;
+      border-bottom: 3px solid transparent;
+    }
+
+    .navbar nav a:hover {
+      border-bottom: 3px solid #ff0000;
+    }
+
+    /* HERO */
+    .hero {
+      background: #ff0000;
+      color: #000;
+      padding: 5rem 3rem;
+      margin: 2rem;
+      border: 6px solid #000;
+      box-shadow: 12px 12px 0 #000;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: 4rem;
+      font-weight: 900;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+    }
+
+    .hero p {
+      font-size: 1.4rem;
+      font-weight: 700;
+      background: #fff;
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      border: 4px solid #000;
+      margin-bottom: 2rem;
+    }
+
+    /* BUTTON */
+    .btn-accent {
+      font-size: 1.2rem;
+      font-weight: 800;
+      padding: 1rem 2.5rem;
+      background: #fff;
+      color: #000;
+      border: 5px solid #000;
+      box-shadow: 6px 6px 0 #000;
+      cursor: pointer;
+      transition: all 0.15s ease-in-out;
+    }
+
+    .btn-accent:hover {
+      box-shadow: 2px 2px 0 #000;
+      transform: translate(4px, 4px);
+    }
+  </style>
 </head>
+
 <body>
 
-<header class="navbar">
-  <a class="logo" href="#">PANGOLIN</a>
-  <nav>
-    <a href="#services">Services</a>
-    <a href="#trainings">Trainings</a>
-    <a href="#contact">Contact</a>
-  </nav>
-</header>
+  <header class="navbar">
+    <a class="logo" href="#">PANGOLIN</a>
+    <nav>
+      <a href="#services">Services</a>
+      <a href="#trainings">Trainings</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
 
-<section class="hero">
-  <h1>ISO Consultancy & Certification</h1>
-  <p>Quality | Safety | Environment | Training</p>
-  <button class="btn-accent">Get a Quote</button>
-</section>
+  <section class="hero">
+    <h1>ISO Consultancy<br>& Certification</h1>
+    <p>QUALITY • SAFETY • ENVIRONMENT • TRAINING</p><br><br>
+    <button class="btn-accent">GET A QUOTE</button>
+  </section>
 
-<!-- Services, Trainings, Contact sections here -->
+  <!-- Services, Trainings, Contact sections here -->
 
 </body>
 </html>
