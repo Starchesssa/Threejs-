@@ -1,102 +1,130 @@
+import React from "react";
+import {
+  AbsoluteFill,
+  Img,
+  interpolate,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
 
-import React, { useMemo } from "react";
-import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
-import { ThreeCanvas } from "@remotion/three";
-import * as THREE from "three";
+const images = [
+  "/1748447519296.jpg",
+  "/file_00000000f59c722fa1bf1388685eb7ae.png",
+  "/1706211372198.png",
+];
 
-type Ball = {
-  initialPos: THREE.Vector3;
-  color: string;
-  radius: number;
-  phase: number; // for deterministic motion
-};
+const SLIDE_DURATION = 90; // frames per slide
 
-const SceneContent: React.FC = () => {
-  const frame = useCurrentFrame();
-  const { durationInFrames } = useVideoConfig();
-
-  const heroRadius = 0.6;
-
-  // ---------------- COLORED BALLS ----------------
-  const balls = useMemo(() => {
-    const colors = ["#ff6b6b", "#6bff95", "#6bc3ff", "#f3ff6b"];
-    const count = 40;
-    const arr: Ball[] = [];
-    for (let i = 0; i < count; i++) {
-      arr.push({
-        initialPos: new THREE.Vector3(
-          (Math.random() - 0.5) * 20,
-          0.5,
-          (Math.random() - 0.5) * 20
-        ),
-        color: colors[i % colors.length],
-        radius: 0.5,
-        phase: Math.random() * Math.PI * 2,
-      });
-    }
-    return arr;
-  }, []);
-
-  // ---------------- HERO BALL ----------------
-  const heroPos = useMemo(() => {
-    const x = Math.sin(frame * 0.05) * 5;
-    const z = Math.cos(frame * 0.03) * 5;
-    const y = 1 + Math.sin(frame * 0.07) * 0.5;
-    return new THREE.Vector3(x, y, z);
-  }, [frame]);
-
-  // ---------------- BALL POSITIONS ----------------
-  const coloredPositions = balls.map((b) => {
-    // simple repelling effect
-    const dir = new THREE.Vector3().subVectors(b.initialPos, heroPos);
-    const dist = dir.length();
-    const offset = dist < heroRadius + b.radius + 1 ? (heroRadius + b.radius + 1 - dist) * 0.3 : 0;
-    dir.normalize();
-    return b.initialPos.clone().add(dir.multiplyScalar(offset));
-  });
-
+// -------------------- SLIDE 1: GRADIENT WIPE --------------------
+const GradientReveal: React.FC<{ src: string; progress: number }> = ({
+  src,
+  progress,
+}) => {
   return (
-    <>
-      {/* FLOOR */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-        <planeGeometry args={[50, 50]} />
-        <meshStandardMaterial color="#fdf6ec" roughness={1} />
-      </mesh>
-
-      {/* COLORED BALLS */}
-      {coloredPositions.map((pos, i) => (
-        <mesh key={i} position={pos}>
-          <sphereGeometry args={[balls[i].radius, 32, 32]} />
-          <meshStandardMaterial color={balls[i].color} />
-        </mesh>
-      ))}
-
-      {/* HERO BALL */}
-      <mesh position={heroPos}>
-        <sphereGeometry args={[heroRadius, 32, 32]} />
-        <meshStandardMaterial
-          color="#ffffff"
-          emissive="#ffffff"
-          emissiveIntensity={1.5}
-        />
-      </mesh>
-
-      {/* LIGHTS */}
-      <ambientLight intensity={0.8} />
-      <directionalLight position={[10, 20, 10]} intensity={1.2} />
-      <pointLight position={[0, 10, 0]} intensity={0.5} />
-    </>
+    <AbsoluteFill>
+      <Img
+        src={src}
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          WebkitMaskImage: `linear-gradient(
+            to right,
+            black ${progress * 100}%,
+            transparent ${(progress + 0.2) * 100}%
+          )`,
+        }}
+      />
+    </AbsoluteFill>
   );
 };
 
-const Scene: React.FC = () => {
-  const { width, height } = useVideoConfig();
+// -------------------- SLIDE 2: INK / NOISE DIVERGENCE --------------------
+const InkReveal: React.FC<{ src: string; progress: number }> = ({
+  src,
+  progress,
+}) => {
+  return (
+    <AbsoluteFill>
+      {/* IMAGE */}
+      <Img
+        src={src}
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          WebkitMaskImage: `
+            radial-gradient(circle at 50% 50%,
+              white ${progress * 120}%,
+              black ${(progress + 0.15) * 120}%
+            )
+          `,
+          filter: "contrast(110%)",
+        }}
+      />
+    </AbsoluteFill>
+  );
+};
+
+// -------------------- SLIDE 3: LAYER DIVERGENCE (YOUR TECHNIQUE) --------------------
+const LayerDivergence: React.FC<{ src: string; progress: number }> = ({
+  src,
+  progress,
+}) => {
+  const blackOffset = interpolate(progress, [0, 1], [0, -200]);
+  const grayOffset = interpolate(progress, [0, 1], [0, 150]);
 
   return (
-    <AbsoluteFill style={{ backgroundColor: "#fdf6ec" }}>
-      <ThreeCanvas camera={{ position: [0, 5, 10], fov: 50 }} width={width} height={height}>
-        <SceneContent />
-      </ThreeCanvas>
+    <AbsoluteFill>
+      {/* IMAGE (STATIC) */}
+      <Img
+        src={src}
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+        }}
+      />
+
+      {/* GRAY COVER */}
+      <AbsoluteFill
+        style={{
+          backgroundColor: "#999",
+          transform: `translateX(${grayOffset}px)`,
+          mixBlendMode: "multiply",
+        }}
+      />
+
+      {/* BLACK COVER */}
+      <AbsoluteFill
+        style={{
+          backgroundColor: "#000",
+          transform: `translateX(${blackOffset}px)`,
+        }}
+      />
+    </AbsoluteFill>
+  );
+};
+
+// -------------------- MAIN SLIDESHOW --------------------
+const Scene: React.FC = () => {
+  const frame = useCurrentFrame();
+  const { width, height } = useVideoConfig();
+
+  const slideIndex = Math.floor(frame / SLIDE_DURATION);
+  const slideFrame = frame % SLIDE_DURATION;
+
+  const progress = interpolate(slideFrame, [0, SLIDE_DURATION], [0, 1], {
+    extrapolateRight: "clamp",
+  });
+
+  return (
+    <AbsoluteFill style={{ backgroundColor: "#000" }}>
+      {slideIndex === 0 && <GradientReveal src={images[0]} progress={progress} />}
+      {slideIndex === 1 && <InkReveal src={images[1]} progress={progress} />}
+      {slideIndex === 2 && (
+        <LayerDivergence src={images[2]} progress={progress} />
+      )}
     </AbsoluteFill>
   );
 };
