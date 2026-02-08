@@ -1,59 +1,60 @@
-import React from 'react';
+import React from "react";
 import {
   AbsoluteFill,
   useCurrentFrame,
   interpolate,
   staticFile,
-} from 'remotion';
+  Img,
+} from "remotion";
 
 /* ---------------- CONFIG ---------------- */
 
 const SLIDE_DURATION = 90;
 
 const slides = [
-  'img/slide1.jpeg',
-  'img/slide2.jpeg',
-  'img/slide3.jpg',
+  "img/slide1.jpeg",
+  "img/slide2.jpeg",
+  "img/slide3.jpg",
 ];
 
 /* ---------------- DIVERGENCE SLIDE ---------------- */
 
-const DivergenceSlide: React.FC<{ src: string; frame: number }> = ({
-  src,
-  frame,
-}) => {
+const DivergenceSlide: React.FC<{
+  src: string;
+  frame: number;
+}> = ({ src, frame }) => {
   const t = interpolate(frame, [0, 45], [0, 1], {
-    extrapolateRight: 'clamp',
+    extrapolateRight: "clamp",
   });
 
   return (
     <AbsoluteFill
       style={{
-        backgroundColor: '#000',
-        perspective: '1400px',
-        transformStyle: 'preserve-3d',
-        overflow: 'hidden',
+        backgroundColor: "#000",
+        perspective: "1400px",
+        transformStyle: "preserve-3d",
+        overflow: "hidden",
       }}
     >
-      {/* DEEP IMAGE */}
-      <img
+      {/* IMAGE (BOTTOM / DEEP) */}
+      <Img
         src={staticFile(src)}
         style={{
-          position: 'absolute',
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          transform: "scale(1.1)",
+          position: "absolute",
           inset: 0,
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          transform: 'scale(1.1)',
         }}
       />
 
-      {/* MIDDLE (GRAY / INK BODY) */}
+      {/* MIDDLE (GRAY) */}
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           inset: 0,
-          backgroundColor: '#777',
+          backgroundColor: "#777",
           transform: `
             translateX(${t * 140}px)
             translateZ(${t * 300}px)
@@ -61,12 +62,12 @@ const DivergenceSlide: React.FC<{ src: string; frame: number }> = ({
         }}
       />
 
-      {/* TOP (BLACK / INK EDGE) */}
+      {/* TOP (BLACK) */}
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           inset: 0,
-          backgroundColor: '#000',
+          backgroundColor: "#000",
           transform: `
             translateX(${-t * 240}px)
             translateZ(${t * 600}px)
