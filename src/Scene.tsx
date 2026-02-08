@@ -6,9 +6,9 @@ import {
   staticFile,
 } from 'remotion';
 
-/* ---------------- SLIDE CONFIG ---------------- */
+/* ---------------- CONFIG ---------------- */
 
-const SLIDE_DURATION = 90; // frames per slide
+const SLIDE_DURATION = 90;
 
 const slides = [
   'img/slide1.jpeg',
@@ -18,10 +18,10 @@ const slides = [
 
 /* ---------------- DIVERGENCE SLIDE ---------------- */
 
-const DivergenceSlide: React.FC<{ src: string }> = ({ src }) => {
-  const frame = useCurrentFrame();
-
-  // Reveal timing
+const DivergenceSlide: React.FC<{ src: string; frame: number }> = ({
+  src,
+  frame,
+}) => {
   const t = interpolate(frame, [0, 45], [0, 1], {
     extrapolateRight: 'clamp',
   });
@@ -35,10 +35,12 @@ const DivergenceSlide: React.FC<{ src: string }> = ({ src }) => {
         overflow: 'hidden',
       }}
     >
-      {/* IMAGE (BOTTOM / DEEP) */}
+      {/* DEEP IMAGE */}
       <img
         src={staticFile(src)}
         style={{
+          position: 'absolute',
+          inset: 0,
           width: '100%',
           height: '100%',
           objectFit: 'cover',
@@ -46,27 +48,27 @@ const DivergenceSlide: React.FC<{ src: string }> = ({ src }) => {
         }}
       />
 
-      {/* GRAY LAYER (MIDDLE) */}
+      {/* MIDDLE (GRAY / INK BODY) */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
           backgroundColor: '#777',
           transform: `
-            translateX(${t * 120}px)
+            translateX(${t * 140}px)
             translateZ(${t * 300}px)
           `,
         }}
       />
 
-      {/* BLACK LAYER (TOP) */}
+      {/* TOP (BLACK / INK EDGE) */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
           backgroundColor: '#000',
           transform: `
-            translateX(${-t * 220}px)
+            translateX(${-t * 240}px)
             translateZ(${t * 600}px)
           `,
         }}
@@ -86,12 +88,11 @@ const DivergenceSlider: React.FC = () => {
   if (!slides[slideIndex]) return null;
 
   return (
-    <AbsoluteFill>
-      <DivergenceSlide
-        key={slideIndex}
-        src={slides[slideIndex]}
-      />
-    </AbsoluteFill>
+    <DivergenceSlide
+      key={slideIndex}
+      src={slides[slideIndex]}
+      frame={localFrame}
+    />
   );
 };
 
