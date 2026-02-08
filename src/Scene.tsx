@@ -1,64 +1,140 @@
-import React from "react";
+import React from 'react';
 import {
   AbsoluteFill,
-  useCurrentFrame,
-  interpolate,
+  Video,
   Img,
+  useCurrentFrame,
+  useVideoConfig,
+  interpolate,
+  Easing,
   staticFile,
-} from "remotion";
+} from 'remotion';
 
-const SLIDE_DURATION = 90;
-
-const slides = [
-  "img/slide1.jpeg",
-  "img/slide2.jpeg",
-  "img/slide3.jpg",
-];
-
-export const DivergenceSlider: React.FC = () => {
+const Scene: React.FC = () => {
   const frame = useCurrentFrame();
+  const { durationInFrames } = useVideoConfig();
 
-  const slideIndex = Math.floor(frame / SLIDE_DURATION);
-  const localFrame = frame % SLIDE_DURATION;
+  /* ================= TIME ================= */
+  const progress = frame / durationInFrames;
+  const ease = Easing.inOut(Easing.cubic);
 
-  if (!slides[slideIndex]) return null;
+  /* ================= CAMERA (Z ONLY) ================= */
+  const cameraDepth = interpolate(
+    progress,
+    [0, 0.5, 1],
+    [-4600, -2200, -600],
+    { easing: ease }
+  );
 
-  const t = interpolate(localFrame, [0, 45], [0, 1], {
-    extrapolateRight: "clamp",
-  });
+  // Move world instead of camera
+  const cameraZ = -cameraDepth;
+
+  /* ================= LAYERS ================= */
+  // X → horizontal
+  // Y → vertical
+  // Z → depth
+
+  const BG = { X: 0, Y: 0, Z: -3000, SCALE: 3.6 };
+  const MG = { X: 0, Y: 200, Z: -1800, SCALE: 2.7 };
+  const FG = { X: 0, Y: 380, Z: -900, SCALE: 0.5 };
 
   return (
-    <AbsoluteFill style={{ backgroundColor: "black", overflow: "hidden" }}>
-      {/* IMAGE */}
-      <Img
-        src={staticFile(slides[slideIndex])}
-        style={{
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          transform: "scale(1.1)",
-        }}
-      />
-
-      {/* GRAY */}
+    <AbsoluteFill
+      style={{
+        backgroundColor: '#000',
+        perspective: 1400,
+        overflow: 'hidden',
+      }}
+    >
+      {/* ================= CAMERA RIG ================= */}
       <div
         style={{
-          position: "absolute",
+          position: 'absolute',
           inset: 0,
-          backgroundColor: "#777",
-          transform: `translateX(${t * 120}px)`,
+          transformStyle: 'preserve-3d',
+          transform: `translateZ(${cameraZ}px)`,
         }}
-      />
+      >
+        {/* 🌄 BACKGROUND (VIDEO) */}
+        <AbsoluteFill
+          style={{
+            transformStyle: 'preserve-3d',
+            transformOrigin: '50% 50%',
+            transform: `
+              translateX(${BG.X}px)
+              translateY(${BG.Y}px)
+              translateZ(${BG.Z}px)
+              scale(${BG.SCALE})
+            `,
+          }}
+        >
+          <Video
+            src={staticFile('img/slide3.jpg')}
+            muted
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
+          />
+        </AbsoluteFill>
 
-      {/* BLACK */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundColor: "#000",
-          transform: `translateX(${-t * 220}px)`,
-        }}
-      />
+        {/* 🏠 MIDGROUND (HOUSE) */}
+        <AbsoluteFill
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+
+            transformStyle: 'preserve-3d',
+            transformOrigin: '50% 50%',
+            transform: `
+              translateX(${MG.X}px)
+              translateY(${MG.Y}px)
+              translateZ(${MG.Z}px)
+              scale(${MG.SCALE})
+            `,
+          }}
+        >
+          <Img
+            src={staticFile('img/slide1.jpeg')}
+            style={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              objectFit: 'contain',
+            }}
+          />
+        </AbsoluteFill>
+
+        {/* 👤 FOREGROUND (PERSON) */}
+        <AbsoluteFill
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+
+            transformStyle: 'preserve-3d',
+            transformOrigin: '50% 50%',
+            transform: `
+              translateX(${FG.X}px)
+              translateY(${FG.Y}px)
+              translateZ(${FG.Z}px)
+              scale(${FG.SCALE})
+            `,
+          }}
+        >
+          <Img
+            src={staticFile('img/slide2.jpeg')}
+            style={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              objectFit: 'contain',
+            }}
+          />
+        </AbsoluteFill>
+      </div>
     </AbsoluteFill>
   );
 };
+
+export default Scene;
