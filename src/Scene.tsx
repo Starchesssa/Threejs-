@@ -11,9 +11,9 @@ import {
 const SLIDE_DURATION = 90; // frames per slide
 
 const slides = [
-  'images/slide1.jpg',
-  'images/slide2.jpg',
-  'images/slide3.jpg',
+  'img/slide1.jpeg',
+  'img/slide2.jpeg',
+  'img/slide3.jpg',
 ];
 
 /* ---------------- DIVERGENCE SLIDE ---------------- */
