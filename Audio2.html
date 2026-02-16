@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neobrutalist Audio Visualizer</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+<style>
+/* --- VARIABLES --- */
+:root {
+  --bg-color: #e0e0e0;
+  --card-bg: #fff;
+  --accent: #6949FF;
+  --border: 3px solid #000;
+  --shadow: 8px 8px 0px #000;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-color);
+  /* Brutalist grid background */
+  background-image: 
+    linear-gradient(#000 1px, transparent 1px),
+    linear-gradient(90deg, #000 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-family: 'Space Mono', monospace;
+}
+
+/* --- PLAYER CONTAINER --- */
+.player {
+  width: 360px;
+  background: var(--card-bg);
+  border: var(--border);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: var(--border);
+  padding-bottom: 10px;
+  margin-bottom: 5px;
+}
+.brand { font-weight: 700; text-transform: uppercase; letter-spacing: -1px; }
+.status { background: #000; color: #fff; padding: 0 5px; font-size: 12px; }
+
+/* --- VISUALIZER SCREEN (The Cool Part) --- */
+.screen-container {
+  background: #fdfdfd;
+  border: var(--border);
+  height: 120px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 4px 4px 0px rgba(0,0,0,0.1);
+}
+
+canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Grid overlay on top of canvas for retro feel */
+.screen-overlay {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
+  background-size: 100% 4px;
+  pointer-events: none;
+}
+
+/* --- CONTROLS --- */
+.controls {
+  display: flex;
+  gap: 10px;
+}
+
+button {
+  flex: 1;
+  background: var(--accent);
+  color: white;
+  border: var(--border);
+  padding: 15px;
+  font-family: 'Archivo', sans-serif;
+  font-size: 18px;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 4px 4px 0px #000;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px #000;
+}
+
+button.secondary {
+  background: #fff;
+  color: #000;
+  flex: 0.5;
+}
+
+/* --- RANGE SLIDERS --- */
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  background: transparent;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  border: var(--border);
+  height: 20px;
+  width: 20px;
+  background: #000;
+  cursor: pointer;
+  margin-top: -8px;
+}
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  background: #000;
+}
+
+</style>
+</head>
+<body>
+
+<div class="player">
+  <div class="header">
+    <div class="brand">AudioOS v2.0</div>
+    <div class="status" id="status-text">READY</div>
+  </div>
+
+  <div class="screen-container">
+    <canvas id="visualizer"></canvas>
+    <div class="screen-overlay"></div>
+  </div>
+
+  <audio id="audio" crossorigin="anonymous" src="https://cdn.pixabay.com/audio/2022/01/18/audio_d0a13f69d2.mp3"></audio>
+
+  <div class="info">
+    <div style="font-weight:bold; font-size: 14px;">NEON NIGHTS</div>
+    <div style="font-size: 12px; color: #555;">Cyberpunk Mix</div>
+  </div>
+
+  <input type="range" id="volume" min="0" max="1" step="0.1" value="0.5">
+
+  <div class="controls">
+    <button class="secondary">⏮</button>
+    <button id="playBtn">PLAY</button>
+    <button class="secondary">⏭</button>
+  </div>
+</div>
+
+<script>
+  const audio = document.getElementById('audio');
+  const playBtn = document.getElementById('playBtn');
+  const canvas = document.getElementById('visualizer');
+  const ctx = canvas.getContext('2d');
+  const volumeSlider = document.getElementById('volume');
+  const statusText = document.getElementById('status-text');
+
+  let audioContext;
+  let analyser;
+  let source;
+  let isContextSetup = false;
+
+  // Resize canvas to match display size for sharp rendering
+  function resizeCanvas() {
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  // Setup Web Audio API
+  function setupAudioContext() {
+    if (isContextSetup) return;
+    
+    // Create Context
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    audioContext = new AudioContext();
+
+    // Create Analyser
+    analyser = audioContext.createAnalyser();
+    analyser.fftSize = 64; // Controls bar count (32 bars roughly)
+    
+    // Connect Source
+    source = audioContext.createMediaElementSource(audio);
+    source.connect(analyser);
+    analyser.connect(audioContext.destination);
+
+    isContextSetup = true;
+  }
+
+  // Drawing Loop
+  function draw() {
+    requestAnimationFrame(draw);
+
+    if (!analyser) return;
+
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    
+    // Get frequency data (0 to 255)
+    analyser.getByteFrequencyData(dataArray);
+
+    // Clear Canvas
+    ctx.fillStyle = '#fdfdfd'; // Background color
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const barWidth = (canvas.width / bufferLength) * 1.5; // Make bars slightly wider
+    let barHeight;
+    let x = 0;
+
+    for (let i = 0; i < bufferLength; i++) {
+      barHeight = dataArray[i] / 2; // Scale down height
+
+      // Neobrutalist Bar Style
+      // 1. Shadow/Depth
+      ctx.fillStyle = '#ccc'; 
+      ctx.fillRect(x + 2, canvas.height - barHeight + 2, barWidth - 2, barHeight);
+
+      // 2. Main Bar (Black)
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(x, canvas.height - barHeight, barWidth - 2, barHeight);
+
+      x += barWidth + 2; // Spacing
+    }
+  }
+
+  // Play Button Logic
+  playBtn.addEventListener('click', () => {
+    // Browser Policy: Context must resume on user gesture
+    if (!isContextSetup) {
+      setupAudioContext();
+      draw(); // Start visualizer loop
+    }
+    
+    if (audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
+
+    if (audio.paused) {
+      audio.play();
+      playBtn.innerText = "PAUSE";
+      playBtn.style.background = "#FF6B6B"; // Switch to Red
+      statusText.innerText = "PLAYING >>";
+      statusText.style.background = "#FF6B6B"; 
+    } else {
+      audio.pause();
+      playBtn.innerText = "PLAY";
+      playBtn.style.background = "#6949FF"; // Switch back to Blue
+      statusText.innerText = "PAUSED ||";
+      statusText.style.background = "#000"; 
+    }
+  });
+
+  // Volume Logic
+  volumeSlider.addEventListener('input', (e) => {
+    audio.volume = e.target.value;
+  });
+
+</script>
+
+</body>
+</html>
