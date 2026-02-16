@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Neobrutalist Audio UI</title>
+
+<style>
+body {
+  margin: 0;
+  background: #f2f2f2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-family: Arial Black, sans-serif;
+}
+
+.player {
+  width: 360px;
+  background: white;
+  border: 4px solid black;
+  padding: 25px;
+  box-shadow: 10px 10px 0px black;
+}
+
+.title {
+  font-size: 22px;
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  font-size: 14px;
+  margin-bottom: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.cd {
+  width: 140px;
+  height: 140px;
+  background: #ff3b30;
+  border: 4px solid black;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  box-shadow: 6px 6px 0px black;
+  position: relative;
+}
+
+.cd::after {
+  content: "";
+  width: 30px;
+  height: 30px;
+  background: white;
+  border: 3px solid black;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+button {
+  flex: 1;
+  margin: 5px;
+  padding: 12px;
+  background: #007aff;
+  border: 3px solid black;
+  font-weight: bold;
+  cursor: default;
+  box-shadow: 4px 4px 0px black;
+}
+
+.progress-container {
+  margin-top: 10px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 16px;
+  border: 3px solid black;
+  background: white;
+  box-shadow: 4px 4px 0px black;
+  overflow: hidden;
+}
+
+.progress {
+  height: 100%;
+  width: 40%;
+  background: black;
+  animation: move 3s infinite alternate ease-in-out;
+}
+
+@keyframes move {
+  from { width: 20%; }
+  to { width: 80%; }
+}
+
+.time {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-top: 6px;
+  font-family: Arial, sans-serif;
+}
+</style>
+</head>
+
+<body>
+
+<div class="player">
+  <div class="title">DID YOU KNOW?</div>
+  <div class="subtitle">10 Facts About Hotels</div>
+
+  <div class="cd"></div>
+
+  <div class="controls">
+    <button>⏮</button>
+    <button>▶ PLAY</button>
+    <button>⏭</button>
+  </div>
+
+  <div class="progress-container">
+    <div class="progress-bar">
+      <div class="progress"></div>
+    </div>
+    <div class="time">
+      <span>0:42</span>
+      <span>3:15</span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
