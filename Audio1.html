@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Neobrutalist Player</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+<style>
+/* --- VARIABLES & RESET --- */
+:root {
+  --bg-color: #f0f0f0;
+  --card-bg: #ffffff;
+  --accent-main: #6949FF; /* Blurple */
+  --accent-sec: #FF6B6B;  /* Coral Red */
+  --accent-tert: #FFD93D; /* Yellow */
+  --border: 3px solid #000000;
+  --shadow: 6px 6px 0px #000000;
+  --shadow-hover: 3px 3px 0px #000000;
+  --shadow-active: 0px 0px 0px #000000;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background-color: var(--bg-color);
+  background-image: radial-gradient(#000 1px, transparent 1px);
+  background-size: 20px 20px; /* Dot pattern grid */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-family: 'Space Mono', monospace;
+}
+
+/* --- MAIN PLAYER CARD --- */
+.player {
+  width: 380px;
+  background: var(--card-bg);
+  border: var(--border);
+  padding: 30px;
+  box-shadow: 12px 12px 0px #000;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+}
+
+/* Badge (Top Right) */
+.badge {
+  position: absolute;
+  top: -15px;
+  right: -10px;
+  background: var(--accent-tert);
+  border: var(--border);
+  padding: 5px 10px;
+  font-family: 'Archivo', sans-serif;
+  font-size: 12px;
+  transform: rotate(3deg);
+  box-shadow: 3px 3px 0px #000;
+}
+
+/* --- DISC ARTWORK --- */
+.disc-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.disc {
+  width: 160px;
+  height: 160px;
+  background: var(--accent-sec);
+  border: var(--border);
+  border-radius: 50%;
+  position: relative;
+  box-shadow: var(--shadow);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.2s;
+}
+
+/* Internal Disc Rings */
+.disc::before {
+  content: "";
+  position: absolute;
+  width: 110px;
+  height: 110px;
+  border: 2px dashed black;
+  border-radius: 50%;
+  opacity: 0.3;
+}
+
+.disc-inner {
+  width: 40px;
+  height: 40px;
+  background: white;
+  border: var(--border);
+  border-radius: 50%;
+  z-index: 2;
+}
+
+/* Animation Class applied by JS */
+.rotating {
+  animation: spin 3s linear infinite;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+/* --- TYPOGRAPHY & MARQUEE --- */
+.track-info {
+  text-align: center;
+  overflow: hidden;
+}
+
+.marquee-container {
+  white-space: nowrap;
+  overflow: hidden;
+  border-bottom: 3px solid #000;
+  background: #000;
+  color: #fff;
+  padding: 5px 0;
+  margin-bottom: 5px;
+}
+
+.title {
+  display: inline-block;
+  font-family: 'Archivo', sans-serif;
+  font-size: 24px;
+  text-transform: uppercase;
+  padding-left: 100%;
+  animation: marquee 10s linear infinite;
+}
+
+@keyframes marquee {
+  0%   { transform: translate(0, 0); }
+  100% { transform: translate(-100%, 0); }
+}
+
+.artist {
+  margin-top: 10px;
+  font-weight: bold;
+  color: #555;
+  font-size: 14px;
+}
+
+/* --- CONTROLS --- */
+.controls-group {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  align-items: center;
+}
+
+.btn {
+  background: var(--card-bg);
+  border: var(--border);
+  cursor: pointer;
+  box-shadow: 4px 4px 0px #000;
+  transition: all 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 6px 6px 0px #000;
+}
+
+.btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: var(--shadow-active);
+}
+
+.btn-sm {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%; /* Circular small buttons */
+}
+
+.btn-lg {
+  width: 70px;
+  height: 70px;
+  background: var(--accent-main);
+  color: white;
+  border-radius: 12px; /* Rounded rect play button */
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.btn-lg .icon {
+  width: 30px;
+  height: 30px;
+  fill: white;
+}
+
+/* --- SLIDERS (The Modern Part) --- */
+/* Custom styling for inputs to match brutalist theme */
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  background: transparent;
+  margin: 10px 0;
+}
+
+input[type=range]:focus {
+  outline: none;
+}
+
+/* Track */
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 12px;
+  cursor: pointer;
+  background: #ffffff;
+  border: 3px solid #000;
+  box-shadow: 2px 2px 0px #000;
+}
+
+/* Thumb (The handle) */
+input[type=range]::-webkit-slider-thumb {
+  border: 3px solid #000000;
+  height: 24px;
+  width: 15px;
+  background: var(--accent-tert);
+  cursor: pointer;
+  -webkit-appearance: none;
+  margin-top: -9px; /* center it */
+  box-shadow: 2px 2px 0px #000;
+  transition: background 0.2s;
+}
+
+input[type=range]::-webkit-slider-thumb:active {
+  background: var(--accent-sec);
+  box-shadow: 0px 0px 0px #000;
+}
+
+.progress-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.time-display {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.volume-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+</style>
+</head>
+
+<body>
+
+<main class="player">
+  <div class="badge">STEREO</div>
+  
+  <div class="disc-wrapper">
+    <div class="disc" id="disc">
+      <div class="disc-inner"></div>
+    </div>
+  </div>
+
+  <div class="track-info">
+    <div class="marquee-container">
+      <div class="title">10 Facts About Hotels • Did You Know? • Season 4 •</div>
+    </div>
+    <div class="artist">Podcast / Audio Series</div>
+  </div>
+
+  <div class="progress-wrapper">
+    <input type="range" id="progress" value="30" max="100">
+    <div class="time-display">
+      <span id="current-time">0:42</span>
+      <span id="total-time">3:15</span>
+    </div>
+  </div>
+
+  <div class="controls-group">
+    <button class="btn btn-sm" aria-label="Previous">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+    </button>
+    
+    <button class="btn btn-lg" id="play-btn" aria-label="Play">
+      <svg class="icon" id="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      <svg class="icon" id="pause-icon" viewBox="0 0 24 24" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+    </button>
+    
+    <button class="btn btn-sm" aria-label="Next">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+    </button>
+  </div>
+
+  <div class="volume-wrapper">
+    <svg class="icon" style="width:16px;" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+    <input type="range" id="volume" value="80" max="100">
+  </div>
+
+</main>
+
+<script>
+  // -- Minimal JavaScript for Interaction --
+  
+  const playBtn = document.getElementById('play-btn');
+  const playIcon = document.getElementById('play-icon');
+  const pauseIcon = document.getElementById('pause-icon');
+  const disc = document.getElementById('disc');
+  const progressBar = document.getElementById('progress');
+  const currentTimeEl = document.getElementById('current-time');
+  
+  let isPlaying = false;
+  let progress = 30; // Simulated starting point
+
+  playBtn.addEventListener('click', togglePlay);
+
+  function togglePlay() {
+    isPlaying = !isPlaying;
+    
+    if (isPlaying) {
+      // Switch Icons
+      playIcon.style.display = 'none';
+      pauseIcon.style.display = 'block';
+      // Start Animation
+      disc.classList.add('rotating');
+      // Start Simulation
+      startTimer();
+    } else {
+      playIcon.style.display = 'block';
+      pauseIcon.style.display = 'none';
+      disc.classList.remove('rotating');
+      stopTimer();
+    }
+  }
+
+  // Simulate Progress Bar Moving
+  let timerInterval;
+  function startTimer() {
+    timerInterval = setInterval(() => {
+      progress += 0.5;
+      if(progress > 100) progress = 0;
+      progressBar.value = progress;
+      
+      // Update dummy time text just for show
+      let totalSeconds = Math.floor((progress / 100) * 195); // 195 seconds is 3:15
+      let m = Math.floor(totalSeconds / 60);
+      let s = totalSeconds % 60;
+      currentTimeEl.innerText = `${m}:${s < 10 ? '0'+s : s}`;
+      
+    }, 100);
+  }
+
+  function stopTimer() {
+    clearInterval(timerInterval);
+  }
+</script>
+
+</body>
+</html>
